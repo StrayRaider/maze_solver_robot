@@ -1,29 +1,25 @@
-import random
+import random, gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+from mz_lib import grid, problems, game, select_size
 
-mazle = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0 ,0, 0, 0, 1, 0, 1, 1, 1, 1],
-    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0 ,0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0 ,0, 0, 0, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-]
+class MyWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Youtube Installation")
 
-def get_point():
-    x = random.randint(0,len(mazle)-1)
-    y = random.randint(0,len(mazle[0])-1)
-    if mazle[x][y] != 0:
-        return get_point()
-    else:
-        return (x,y)
-
-start_point = get_point()
-stop_point = get_point()
-while stop_point == start_point:
-    stop_point = get_point()
-
-print(start_point, stop_point)
+        self.stack = Gtk.Stack()
+        self.add(self.stack)
+        self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        self.stack.set_transition_duration(1000)
+        self.stack.add_titled(problems.Problems(self),"problem_select","choice_screen")
+        self.game = game.Game(self)
+        self.stack.add_titled(self.game,"game","choice_screen")
+        self.stack.add_titled(select_size.Select_size(self),"select_size","choice_screen")
+        self.problem = 0
+        
+        
+        
+win = MyWindow()
+win.connect("destroy", Gtk.main_quit)
+win.show_all()
+Gtk.main()
