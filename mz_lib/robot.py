@@ -5,13 +5,6 @@ class Robot():
         self.root_node = Node(*parent.start_point,None)
         self.active_node = self.root_node
         self.parent = parent
-        self.start_robot()
-
-    def __del__(self):
-        print('Inside the destructor')
-        print('Object gets destroyed')
-
-    def start_robot(self):
         self.founded = False
         self.used_paths(self.root_node)
         self.is_see = []
@@ -26,31 +19,47 @@ class Robot():
     def move(self):
         x = self.active_node.x
         y = self.active_node.y
-        rd = random.randint(0,3)
-        if rd == 0:
-            x+=1
-        elif rd == 1:
-            x-=1
-        elif rd == 2:
-            y+=1
-        elif rd == 3:
-            y-=1
-        if self.is_able_to_move(x,y):
-            self.move_f(x,y)
+        if self.is_stop_near(x,y):
+            self.move_f(*self.parent.stop_point)
         else:
-            x = self.active_node.x
-            y = self.active_node.y
-            if self.is_able_to_move(x+1,y):
-                self.move_f(x+1,y)
-            elif self.is_able_to_move(x-1,y):
-                self.move_f(x-1,y)
-            elif self.is_able_to_move(x,y+1):
-                self.move_f(x,y+1)
-            elif self.is_able_to_move(x,y-1):
-                self.move_f(x,y-1)
+            rd = random.randint(0,3)
+            if rd == 0:
+                x+=1
+            elif rd == 1:
+                x-=1
+            elif rd == 2:
+                y+=1
+            elif rd == 3:
+                y-=1
+            if self.is_able_to_move(x,y):
+                self.move_f(x,y)
             else:
-                self.active_node = self.active_node.parent
-                print("parenta dönüldü")
+                x = self.active_node.x
+                y = self.active_node.y
+                if self.is_able_to_move(x+1,y):
+                    self.move_f(x+1,y)
+                elif self.is_able_to_move(x-1,y):
+                    self.move_f(x-1,y)
+                elif self.is_able_to_move(x,y+1):
+                    self.move_f(x,y+1)
+                elif self.is_able_to_move(x,y-1):
+                    self.move_f(x,y-1)
+                else:
+                    self.active_node = self.active_node.parent
+                    print("parenta dönüldü")
+
+    def is_stop_near(self,x,y):
+        if self.parent.stop_point[0] == x-1 and self.parent.stop_point[1] == y:
+            return True
+        elif self.parent.stop_point[0] == x+1 and self.parent.stop_point[1] == y:
+            return True
+        if self.parent.stop_point[0] == x and self.parent.stop_point[1] == y-1:
+            return True
+        elif self.parent.stop_point[0] == x and self.parent.stop_point[1] == y+1:
+            return True
+        return False
+
+
 
     def move_f(self,x,y):
         if (x,y) not in self.moved:

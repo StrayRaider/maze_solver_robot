@@ -32,8 +32,10 @@ class Game(Gtk.VBox):
         self.timer = GObject.timeout_add(1000/5, self.update)
         if self.started == True:
             self.started = False
+            self.start_but.set_label("Start")
         elif self.started == False:
             self.started = True
+            self.start_but.set_label("Stop")
         
     def start(self,problem,size = None):
         print(problem,".problem")
