@@ -12,3 +12,6 @@
 
 ### Solved ones:
  - ...
+
+### Questions
+  - in url is there a .txt file or directliy usr is a text
