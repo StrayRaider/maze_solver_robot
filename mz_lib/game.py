@@ -87,6 +87,8 @@ class Game(Gtk.VBox):
             y = self.grid.nodes[i].y
             if not self.grid.nodes[i].is_saw:
                 cr.set_source_rgb(0,0,0)
+            elif self.grid.nodes[i].is_short_way:
+                cr.set_source_rgb(0.9,0.3,0.3)
             elif self.robot.x == x and self.robot.y == y:
                 cr.set_source_rgb(0,1,0)
             elif x == self.stop_point[0] and y == self.stop_point[1]:
@@ -101,6 +103,11 @@ class Game(Gtk.VBox):
                 cr.set_source_rgb(0.5,0.5,0.5)
             cr.rectangle((self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x,self.box_x,self.box_y)
             cr.fill()
+            cr.stroke()
+            cr.set_source_rgb(0.8,0.8,0.8)
+            cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.text_path(str(self.grid.nodes[i].real_depth))
+            cr.stroke()
         cr.stroke()
         self.drawing_area.queue_draw()
 

@@ -16,11 +16,11 @@ class Grid():
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
         self.nodes = {}
-        self.gen_nodes()
 
         if os.path.exists(path):
             print("path var",path)
             self.mazle = self.read_generate(path)
+            self.gen_nodes()
         else:
             print("path yok",path)
             #self.mazle = self.generate(path)
@@ -32,6 +32,7 @@ class Grid():
             x = 0
             for col in row:
                 self.nodes[(x,y)]=node.Node(x,y)
+                self.nodes[(x,y)].type = self.mazle[x][y]
                 x+=1
             y+=1
         print(self.nodes)
