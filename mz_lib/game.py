@@ -82,30 +82,29 @@ class Game(Gtk.VBox):
         #print(self.grid.mazle)
         cr.set_source_rgb(0,1,0)
         y = 0
-        for row in self.grid.mazle:
-            x = 0
-            for col in row:
-                if (x,y) not in self.robot.is_see:
-                    cr.set_source_rgb(0,0,0)
-                elif x == self.robot.active_node.x and y == self.robot.active_node.y:
-                    cr.set_source_rgb(0,1,0)
-                elif x == self.stop_point[0] and y == self.stop_point[1]:
-                    cr.set_source_rgb(1,0,0)
-                elif (x,y) in self.robot.used_paths(self.robot.root_node):
-                    cr.set_source_rgb(0,0,1)
-                elif self.grid.mazle[x][y] == 0:
-                    cr.set_source_rgb(1,1,1)
-                else:
-                    cr.set_source_rgb(0.5,0.5,0.5)
-                cr.rectangle((self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x,self.box_x,self.box_y)
-                cr.fill()
-                x+=1
-            y+=1
+        for i in self.grid.nodes.keys():
+            x = self.grid.nodes[i].x
+            y = self.grid.nodes[i].y
+            if not self.grid.nodes[i].is_saw:
+                cr.set_source_rgb(0,0,0)
+            elif self.robot.x == x and self.robot.y == y:
+                cr.set_source_rgb(0,1,0)
+            elif x == self.stop_point[0] and y == self.stop_point[1]:
+                cr.set_source_rgb(1,0,0)
+            elif self.grid.nodes[i].is_used:
+                cr.set_source_rgb(0,0,1)
+            elif self.grid.nodes[i].is_moved:
+                cr.set_source_rgb(0,0.5,0.5)
+            elif self.grid.mazle[x][y] == 0:
+                cr.set_source_rgb(1,1,1)
+            else:
+                cr.set_source_rgb(0.5,0.5,0.5)
+            cr.rectangle((self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x,self.box_x,self.box_y)
+            cr.fill()
         cr.stroke()
         self.drawing_area.queue_draw()
 
     def update(self):
-        print("here")
         ret = True
         if self.started:
             if self.robot != None:
