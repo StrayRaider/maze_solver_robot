@@ -13,7 +13,7 @@ class Robot():
         self.grid.nodes[(self.x,self.y)].is_saw = True
         self.grid.nodes[(self.x,self.y)].is_used = True
         self.grid.nodes[(self.x,self.y)].real_depth = 0
-        self.founded_depth
+        self.founded_depth = 0
         self.see_nodes(self.x,self.y)
 
     def see_nodes(self,x,y):

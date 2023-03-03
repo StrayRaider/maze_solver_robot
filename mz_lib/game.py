@@ -3,7 +3,7 @@ import gi, random
 path = "./mz_lib/map.txt"
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
 from mz_lib import grid, robot
 
 class Game(Gtk.VBox):
@@ -27,6 +27,7 @@ class Game(Gtk.VBox):
         self.start_but.set_label("Start")
         self.start_but.connect("clicked",self.start_but_clicked)
         self.pack_start(self.start_but,0,0,5)
+        self.duba = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/duba.png", self.box_x, self.box_y, True)
 
     def start_but_clicked(self,widget):
         self.timer = GObject.timeout_add(1000/5, self.update)
@@ -100,7 +101,7 @@ class Game(Gtk.VBox):
             elif self.grid.mazle[x][y] == 0:
                 cr.set_source_rgb(1,1,1)
             else:
-                cr.set_source_rgb(0.5,0.5,0.5)
+                Gdk.cairo_set_source_pixbuf(cr, self.duba, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
             cr.rectangle((self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x,self.box_x,self.box_y)
             cr.fill()
             cr.stroke()
