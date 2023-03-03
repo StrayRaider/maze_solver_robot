@@ -94,6 +94,8 @@ class Robot():
                     self.move_f(x,y-1)
                 else:
                     #parenta dönme kodu
+                    #üzerinde olunan node un girişini kaldır
+                    self.grid.nodes[(self.x,self.y)].in_way = None
                     self.active_depth -= 1
                     print(self.active_depth)
                     self.grid.nodes[(self.x,self.y)].is_used = False
@@ -101,6 +103,8 @@ class Robot():
                     y = self.grid.nodes[(self.x,self.y)].parent.y
                     self.x = x
                     self.y = y
+                    #parent(geri dönülen) node un çıkışını kaldır
+                    self.grid.nodes[(self.x,self.y)].out_way = None
                     self.grid.nodes[(self.x,self.y)].childs = []
                     print("parenta dönüldü")
 
@@ -123,9 +127,28 @@ class Robot():
         self.active_depth += 1
         self.grid.nodes[(x,y)].parent = self.grid.nodes[(self.x,self.y)]
         self.grid.nodes[(self.x,self.y)].add_child(self.grid.nodes[(x,y)])
+        self.set_way(self.grid.nodes[(x,y)])
         self.x = x
         self.y = y
         self.see_nodes(self.x,self.y)
+
+    #gidilen node u alır ve parent ve kendisine yol çeker
+    def set_way(self,m_node):
+        x = m_node.x - m_node.parent.x
+        y = m_node.y - m_node.parent.y
+        way = None
+        if x == 1:
+            way = "up"
+        elif x == -1:
+            way = "down"
+        elif y == 1:
+            way = "right"
+        elif y == -1:
+            way = "left"
+        print("atanan : ",way)
+        m_node.in_way = way
+        m_node.parent.out_way = way
+
 
     def go_to_small(self,x,y):
         around = self.around(x,y)
@@ -152,13 +175,13 @@ class Robot():
         print("back_mode 1 : ",back_node.x,back_node.y)
         found_way.append(back_node)
         while 1:
+            if not back_node.real_depth:
+                break
             print("back_mode : ",back_node.x,back_node.y)
             print(found_way)
             back_node = self.go_to_small(back_node.x,back_node.y)
             found_way.append(back_node)
             back_node.is_short_way = True
-            if not back_node.real_depth:
-                break
         print(len(found_way))
 
     def update(self):

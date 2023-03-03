@@ -11,6 +11,8 @@ class Node():
         self.is_moved = False
         self.real_depth = -1
         self.is_short_way = False
+        self.in_way = None
+        self.out_way = None
 
     def add_child(self,child):
         self.childs.append(child)

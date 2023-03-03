@@ -22,7 +22,7 @@ class Problems(Gtk.VBox):
         
     def problem_1_clicked(self,widget):
         self.parent.game.start(1)
-        self.parent.stack.set_visible_child_name("file_chooser")
+        self.parent.stack.set_visible_child_name("game")
     
     def problem_2_clicked(self,widget):
         self.parent.stack.set_visible_child_name("select_size")
