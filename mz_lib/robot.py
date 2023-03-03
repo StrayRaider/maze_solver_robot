@@ -13,6 +13,7 @@ class Robot():
         self.grid.nodes[(self.x,self.y)].is_saw = True
         self.grid.nodes[(self.x,self.y)].is_used = True
         self.grid.nodes[(self.x,self.y)].real_depth = 0
+        self.founded_depth
         self.see_nodes(self.x,self.y)
 
     def see_nodes(self,x,y):
@@ -139,6 +140,8 @@ class Robot():
         return small_node
 
     def found(self,x,y):
+        self.founded_depth = self.grid.nodes[(x,y)].real_depth
+        print("HEREEE ! : ",self.grid.nodes[(x,y)].real_depth)
         print("found started")
         print("founded loc : ",x,y)
         self.grid.nodes[(x,y)].is_short_way = True
