@@ -1,9 +1,8 @@
-import gi, random
+import gi, random, datetime
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
 from mz_lib import grid, robot
-import time
 
 class Game(Gtk.HBox):
     def __init__(self,parent):
@@ -59,6 +58,23 @@ class Game(Gtk.HBox):
 
         self.active_depth_label = Gtk.Label("active depth : 0")
         self.but_part.pack_start(self.active_depth_label,0,0,5)
+
+        self.view_depth_but = Gtk.Button(label="View Depths")
+        self.view_depth_but.connect("clicked",self.set_depth_label)
+        self.but_part.pack_start(self.view_depth_but,0,0,5)
+        self.view_depth_label = True
+
+        self.start_time = datetime.datetime.now()
+        self.stop_time = datetime.datetime.now()
+        self.time_label = Gtk.Label(str((self.stop_time-self.start_time).seconds))
+        self.but_part.pack_start(self.time_label,0,0,5)
+
+    def set_depth_label(self,widget):
+        if self.view_depth_label == True:
+            self.view_depth_label = False
+            print("label : ",self.view_depth_label)
+        else:
+            self.view_depth_label = True
 
     def init_and_scale(self):
         count_x = len(self.grid.maze)
@@ -136,13 +152,14 @@ class Game(Gtk.HBox):
             image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE)
             self.started = True
         self.start_but.set_image(image)
+        self.start_time = datetime.datetime.now()
         
-    def start(self,problem,size_path = None):
+    def start(self,problem,size_path = None,maze_hardness = None):
         print(problem,".problem")
         if problem == 1:
             self.solve_problem_1(size_path)
         if problem == 2:
-            self.solve_problem_2(size_path)
+            self.solve_problem_2(size_path,maze_hardness)
     
     def solve_problem_1(self,path):
         self.grid = grid.Grid(1,path)
@@ -150,11 +167,11 @@ class Game(Gtk.HBox):
         self.robot = robot.Robot(self)
         self.init_and_scale()
         
-    def solve_problem_2(self,size):
+    def solve_problem_2(self,size,maze_hardness):
         self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
         print(self.start_point)
         print(self.stop_point)
-        self.grid = grid.Grid(2,size,self.start_point,self.stop_point)
+        self.grid = grid.Grid(2,size,self.start_point,self.stop_point,maze_hardness)
         self.robot = robot.Robot(self)
         self.init_and_scale()
  
@@ -264,7 +281,8 @@ class Game(Gtk.HBox):
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
                         (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
-            self.view_depth(cr,m_node)
+            if m_node.real_depth != -1 and self.view_depth_label:
+                self.view_depth(cr,m_node)
         self.drawing_area.queue_draw()
 
     def view_depth(self,cr,m_node):
@@ -292,4 +310,6 @@ class Game(Gtk.HBox):
         else:
             return False
         self.update_labels()
+        self.stop_time = datetime.datetime.now()
+        self.time_label.set_text(str((self.stop_time-self.start_time).total_seconds() * 1000))
         return ret

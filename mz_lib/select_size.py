@@ -24,9 +24,18 @@ class Select_size(Gtk.VBox):
         self.set_size.connect("clicked",self.get_size)
         self.x = 0
         self.y = 0
+        self.hardness_combo = Gtk.ComboBoxText()
+        self.hardness_combo.append_text("easy")
+        self.hardness_combo.append_text("hard")
+        self.vert.pack_start(self.hardness_combo,0,0,5)
+        self.maze_hardness = True
 
     def get_size(self,widget):
         self.x = self.entry_x.get_text()
         self.y = self.entry_y.get_text()
-        self.parent.game.start(2,(self.x,self.y))
+        if self.hardness_combo.get_active_text() == "easy":
+            self.maze_hardness = False
+        else:
+            self.maze_hardness = True
+        self.parent.game.start(2,(self.x,self.y),self.maze_hardness)
         self.parent.stack.set_visible_child_name("game")

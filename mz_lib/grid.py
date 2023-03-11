@@ -2,7 +2,7 @@ import os, random, requests
 from mz_lib import node
 
 class Grid():
-    def __init__(self,problem,path_size,start_p=None,stop_p=None):
+    def __init__(self,problem,path_size,start_p=None,stop_p=None,maze_hardness=None):
         #path_size is a variable able to carry path or size
         self.maze = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -16,6 +16,11 @@ class Grid():
         [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
+        # it is a var for random size when chooseing the wall or road on random maze gen if it is bigger there will be more walls
+        if maze_hardness:
+            self.rand_size = 2
+        else:
+            self.rand_size = 1
         self.nodes = {}
         if problem == 1:
             if os.path.exists(path_size):
@@ -104,7 +109,7 @@ class Grid():
         if len(free_nbh_list)!=0:
             is_changed = False
             for i in free_nbh_list:
-                random_num = random.randint(0,2)
+                random_num = random.randint(0,self.rand_size)
                 if not i.map_setted:
                     if not random_num:
                         active_node.map_childs.append(i)
@@ -151,16 +156,25 @@ class Grid():
         return False
 
     def not_used_setter(self):
+        while self.is_none_gone():
+            for i in self.nodes.keys():
+                if(self.is_not_middle(i)):
+                    if not self.nodes[i].map_setted:
+                        nbh_list = [self.nodes[(i[0],i[1]+1)],self.nodes[(i[0],i[1]-1)],
+                            self.nodes[(i[0]+1,i[1])],self.nodes[(i[0]-1,i[1])]]
+                        for node in nbh_list:
+                            if node.type == 1 and (self.is_not_middle((node.x,node.y))):
+                                node.type = 0
+                                self.move_node(node.x,node.y)
+                                break
+
+    def is_none_gone(self):
+        none_gone = False
         for i in self.nodes.keys():
             if(self.is_not_middle(i)):
                 if not self.nodes[i].map_setted:
-                    nbh_list = [self.nodes[(i[0],i[1]+1)],self.nodes[(i[0],i[1]-1)],
-                        self.nodes[(i[0]+1,i[1])],self.nodes[(i[0]-1,i[1])]]
-                    for node in nbh_list:
-                        if node.type == 1 and (self.is_not_middle((node.x,node.y))):
-                            node.type = 0
-                            self.move_node(node.x,node.y)
-                            break
+                    none_gone = True
+        return none_gone
 
     def gen_maze(self):
         for i in self.nodes.keys():
