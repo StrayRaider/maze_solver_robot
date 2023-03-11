@@ -1,7 +1,7 @@
 import random, gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from mz_lib import grid, problems, game, select_size, fileChs
+from mz_lib import grid, problems, game, select_size, fileChs, read_url
 
 class MyWindow(Gtk.Window):
     def __init__(self):
@@ -13,9 +13,13 @@ class MyWindow(Gtk.Window):
         self.stack.add_titled(problems.Problems(self),"problem_select","choice_screen")
         self.stack.add_titled(fileChs.FileChs(self),"file_chooser","choice_screen")
         self.stack.add_titled(select_size.Select_size(self),"select_size","choice_screen")
+        self.stack.add_titled(read_url.Select_size(self),"read_url","choice_screen")
         self.game = game.Game(self)
         self.stack.add_titled(self.game,"game","choice_screen")
         self.problem = 0
+        self.max_x = 1150
+        self.max_y = 1000
+        self.set_size_request(self.max_x,self.max_y)
 
 win = MyWindow()
 win.connect("destroy", Gtk.main_quit)

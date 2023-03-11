@@ -1,43 +1,94 @@
 import gi, random
 
-path = "./mz_lib/map.txt"
-
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
 from mz_lib import grid, robot
 import time
 
-class Game(Gtk.VBox):
+class Game(Gtk.HBox):
     def __init__(self,parent):
         Gtk.VBox.__init__(self)
         self.parent = parent
         self.label = Gtk.Label("Game")
-        self.pack_start(self.label,0,0,5)
+        #self.pack_start(self.label,0,0,5)
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.connect("draw", self.draw_all)
-        self.pack_start(self.drawing_area,1,1,5)
+        self.drawing_area.set_size_request(1000,1000)
+        self.pack_start(self.drawing_area,0,0,10)
         self.drawing_area.queue_draw()
-        self.box_x = 50
-        self.box_y = 50
-        self.con_x = 6
-        self.con_y = 25
-        self.space_x = 2
-        self.space_y = 2
         self.robot = None
         self.started = False
         self.fastness = 1000
 
-        self.start_but = Gtk.Button()
-        self.start_but.set_label("Start")
+        #self.start_but = Gtk.Button()
+        #self.start_but.set_label("Start")
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but = Gtk.Button(image=image)
         self.start_but.connect("clicked",self.start_but_clicked)
 
-        self.faster = Gtk.Button()
-        self.faster.set_label("Faster")
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT)
+        self.faster = Gtk.Button(image=image)
         self.faster.connect("clicked",self.set_faster)
         self.speed_changed = False
 
-        self.pack_start(self.start_but,0,0,5)
-        self.pack_start(self.faster,0,0,5)
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS)
+        self.slower = Gtk.Button(image=image)
+        self.slower.connect("clicked",self.set_slower)
+        self.speed_changed = False
+
+        self.finish = Gtk.Button()
+        self.finish.set_label("Faster")
+        self.finish.connect("clicked",self.finish_maze)
+
+        self.but_part = Gtk.VBox()
+        self.fastness_part = Gtk.HBox()
+        self.but_part.pack_start(self.fastness_part,1,0,5)
+        self.fastness_part.pack_start(self.slower,1,1,5)
+        self.fastness_part.pack_start(self.start_but,1,1,5)
+        self.fastness_part.pack_start(self.faster,1,1,5)
+        self.but_part.pack_start(self.finish,1,0,5)
+        self.pack_start(self.but_part,1,1,5)
+        self.max_x_px =1400
+        self.max_y_px =900
+
+        self.move_c_label = Gtk.Label("move : 0")
+        self.but_part.pack_start(self.move_c_label,0,0,5)
+
+        self.parent_c_label = Gtk.Label("turning back : 0")
+        self.but_part.pack_start(self.parent_c_label,0,0,5)
+
+        self.active_depth_label = Gtk.Label("active depth : 0")
+        self.but_part.pack_start(self.active_depth_label,0,0,5)
+
+    def init_and_scale(self):
+        count_x = len(self.grid.maze)
+        count_y = len(self.grid.maze[0])
+        self.box_x = 50
+        self.space_x = 2
+        self.box_y = 50
+        self.space_y = 2
+        scale = 1
+        scale_x = 1
+        scale_y = 1
+        if count_x * (self.box_x + self.space_x) > self.max_x_px:
+            scale_x = self.max_x_px/(count_x * (self.box_x + self.space_x))
+        if count_y * (self.box_y + self.space_y) > self.max_y_px:
+            scale_y = self.max_y_px/(count_y * (self.box_y + self.space_y))
+        if scale_x < scale_y:
+            scale = scale_x
+        elif scale_y < scale_x:
+            scale = scale_y
+        else:
+            scale = scale_x
+        print(scale)
+        self.box_x = 50*scale
+        self.box_y = 50*scale
+        self.con_x = 6*scale
+        self.con_y = 25*scale
+        self.space_x = 2*scale
+        self.space_y = 2*scale
+        print(self.box_x)
+
         self.duvar = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/duvar.png", self.box_x, self.box_y, True)
         self.zemin_w = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin.png", self.box_x, self.box_y, True)
         self.zemin_g = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin_1.png", self.box_x, self.box_y, True)
@@ -54,36 +105,51 @@ class Game(Gtk.VBox):
         self.cizgi_y = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_y.png", self.con_y, self.con_x, True)
         self.start_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bb.png", self.box_x, self.box_y, True)
 
-    def set_faster(self,widget):
-        self.fastness /= 2
+    def set_faster(self,widget,speed_up = 2):
+        self.timer = None
+        self.fastness /= speed_up
         self.speed_changed = True
         self.timer = GObject.timeout_add(self.fastness, self.update)
 
+    def set_slower(self,widget,speed_up = 2):
+        self.timer = None
+        self.fastness *= speed_up
+        self.speed_changed = True
+        self.timer = GObject.timeout_add(self.fastness, self.update)
+
+    def finish_maze(self,widget):
+        self.start_but_clicked(None)
+        self.set_faster(None,500)
+        self.start_but_clicked(None)
 
     def start_but_clicked(self,widget):
         self.timer = GObject.timeout_add(self.fastness, self.update)
         if self.started == True:
             self.started = False
-            self.start_but.set_label("Start")
+            image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
         elif self.started == False:
+            image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE)
             self.started = True
-            self.start_but.set_label("Stop")
+        self.start_but.set_image(image)
         
-    def start(self,problem,size = None):
+    def start(self,problem,size_path = None):
         print(problem,".problem")
         if problem == 1:
-            self.solve_problem_1(path)
+            self.solve_problem_1(size_path)
         if problem == 2:
-            self.solve_problem_2(size)
+            self.solve_problem_2(size_path)
     
     def solve_problem_1(self,path):
-        self.grid = grid.Grid(path)
+        self.grid = grid.Grid(1,path)
         self.start_point ,self.stop_point = self.problem_1_start_stop()
         self.robot = robot.Robot(self)
+        self.init_and_scale()
         
     def solve_problem_2(self,size):
-        self.grid = grid.Grid(size)
+        self.grid = grid.Grid(2,size)
+        self.start_point ,self.stop_point = self.problem_1_start_stop()
         self.robot = robot.Robot(self)
+        self.init_and_scale()
         
     def problem_1_start_stop(self):
         start_point = self.get_point()
@@ -95,11 +161,11 @@ class Game(Gtk.VBox):
     
     def get_point(self):
         #random start and stop point generator
-        x = random.randint(0,len(self.grid.mazle)-1)
-        y = random.randint(0,len(self.grid.mazle[0])-1)
-        #print(self.grid.mazle)
-        #print(self.grid.mazle[x][y])
-        if self.grid.mazle[x][y] != 0:
+        x = random.randint(0,len(self.grid.maze)-1)
+        y = random.randint(0,len(self.grid.maze[0])-1)
+        #print(self.grid.maze)
+        #print(self.grid.maze[x][y])
+        if self.grid.maze[x][y] != 0:
             return self.get_point()
         else:
             return (x,y)
@@ -111,7 +177,7 @@ class Game(Gtk.VBox):
         return 
         
     def draw_all(self,widget,cr):
-        #print(self.grid.mazle)
+        #print(self.grid.maze)
         cr.set_source_rgb(0,1,0)
         y = 0
         for i in self.grid.nodes.keys():
@@ -131,7 +197,7 @@ class Game(Gtk.VBox):
                 Gdk.cairo_set_source_pixbuf(cr, self.zemin_b, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
             elif m_node.is_moved:
                 Gdk.cairo_set_source_pixbuf(cr, self.zemin_y, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
-            elif self.grid.mazle[x][y] == 0:
+            elif self.grid.maze[x][y] == 0:
                 Gdk.cairo_set_source_pixbuf(cr, self.zemin_w, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
             else:
                 Gdk.cairo_set_source_pixbuf(cr, self.duvar, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
@@ -146,23 +212,31 @@ class Game(Gtk.VBox):
             #yol çizimi:
             if m_node.in_way != None:
                 if m_node.in_way == "down":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d, ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
                 elif m_node.in_way == "up":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d, ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
                 elif m_node.in_way == "left":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y, ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 elif m_node.in_way == "right":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y, (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
             if m_node.out_way != None:
                 if m_node.out_way == "up":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d, ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
                 elif m_node.out_way == "down":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d, ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
                 elif m_node.out_way == "right":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y, ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 elif m_node.out_way == "left":
-                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y, (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
             #self.view_depth(cr,m_node)
         self.drawing_area.queue_draw()
@@ -175,6 +249,11 @@ class Game(Gtk.VBox):
             cr.text_path(str(m_node.real_depth))
             cr.stroke()
 
+    def update_labels(self):
+        self.move_c_label.set_label("move : "+str(self.robot.move_c))
+        self.parent_c_label.set_label("turning back : "+str(self.robot.parent_back_c))
+        self.active_depth_label.set_label("active depth : "+str(self.robot.active_node_depth))
+
     def update(self):
         if self.speed_changed == True:
             self.speed_changed = False
@@ -185,4 +264,5 @@ class Game(Gtk.VBox):
                 ret = self.robot.update()
         else:
             return False
+        self.update_labels()
         return ret

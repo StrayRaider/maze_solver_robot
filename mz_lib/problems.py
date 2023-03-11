@@ -19,10 +19,11 @@ class Problems(Gtk.VBox):
         self.problem2.connect("clicked",self.problem_2_clicked)
         self.pack_start(self.problem1,0,0,5)
         self.pack_start(self.problem2,0,0,5)
+        self.path = "./mz_lib/map.txt"
         
     def problem_1_clicked(self,widget):
-        self.parent.game.start(1)
-        self.parent.stack.set_visible_child_name("game")
+        self.parent.game.start(1,self.path)
+        self.parent.stack.set_visible_child_name("read_url")
     
     def problem_2_clicked(self,widget):
         self.parent.stack.set_visible_child_name("select_size")

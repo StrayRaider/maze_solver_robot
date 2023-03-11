@@ -15,6 +15,8 @@ class Robot():
         self.grid.nodes[(self.x,self.y)].real_depth = 0
         self.founded_depth = 0
         self.see_nodes(self.x,self.y)
+        self.move_c = 0
+        self.parent_back_c = 0
 
     def see_nodes(self,x,y):
         self.grid.nodes[(x,y)].is_saw = True
@@ -46,24 +48,25 @@ class Robot():
 
     def around(self,x,y):
         around = []
-        if x+1 < len(self.grid.mazle):
+        if x+1 < len(self.grid.maze):
             around.append(self.grid.nodes[(x+1,y)])
         if x-1 >= 0:
             around.append(self.grid.nodes[(x-1,y)])
-        if y+1 < len(self.grid.mazle[0]):
+        if y+1 < len(self.grid.maze[0]):
             around.append(self.grid.nodes[(x,y+1)])
         if y-1 >= 0:
             around.append(self.grid.nodes[(x,y-1)])
         return around
 
     def is_able_to_move(self,x,y):
-        if self.grid.mazle[x][y] != 0:
+        if self.grid.maze[x][y] != 0:
             return 0
         if self.grid.nodes[(x,y)].is_moved:
             return 0
         return 1
 
     def move(self):
+        self.move_c += 1
         x = self.x
         y = self.y
         # kırmızı yakındaysa direkt ulaş
@@ -94,6 +97,7 @@ class Robot():
                     self.move_f(x,y-1)
                 else:
                     #parenta dönme kodu
+                    self.parent_back_c += 1
                     #üzerinde olunan node un girişini kaldır
                     self.grid.nodes[(self.x,self.y)].in_way = None
                     self.active_depth -= 1
@@ -190,6 +194,8 @@ class Robot():
         if self.x == self.parent.stop_point[0] and self.y == self.parent.stop_point[1]:
             self.found(self.x,self.y)
             self.founded = True
-            return False 
+            self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
+            return False
+        self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
         print(self.x,self.y)
         return True
