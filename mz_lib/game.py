@@ -14,7 +14,7 @@ class Game(Gtk.HBox):
         self.drawing_area = Gtk.DrawingArea()
         self.drawing_area.connect("draw", self.draw_all)
         self.drawing_area.set_size_request(1000,1000)
-        self.pack_start(self.drawing_area,0,0,10)
+        self.pack_start(self.drawing_area,1,1,10)
         self.drawing_area.queue_draw()
         self.robot = None
         self.started = False
@@ -42,14 +42,14 @@ class Game(Gtk.HBox):
 
         self.but_part = Gtk.VBox()
         self.fastness_part = Gtk.HBox()
-        self.but_part.pack_start(self.fastness_part,1,0,5)
-        self.fastness_part.pack_start(self.slower,1,1,5)
-        self.fastness_part.pack_start(self.start_but,1,1,5)
-        self.fastness_part.pack_start(self.faster,1,1,5)
-        self.but_part.pack_start(self.finish,1,0,5)
-        self.pack_start(self.but_part,1,1,5)
-        self.max_x_px =1400
-        self.max_y_px =900
+        self.but_part.pack_start(self.fastness_part,0,0,5)
+        self.fastness_part.pack_start(self.slower,0,0,5)
+        self.fastness_part.pack_start(self.start_but,0,0,5)
+        self.fastness_part.pack_start(self.faster,0,0,5)
+        self.but_part.pack_start(self.finish,0,0,5)
+        self.pack_start(self.but_part,0,0,5)
+        self.max_x_px =950
+        self.max_y_px =1700
 
         self.move_c_label = Gtk.Label("move : 0")
         self.but_part.pack_start(self.move_c_label,0,0,5)
@@ -63,6 +63,8 @@ class Game(Gtk.HBox):
     def init_and_scale(self):
         count_x = len(self.grid.maze)
         count_y = len(self.grid.maze[0])
+        print(count_y)
+        print(count_x)
         self.box_x = 50
         self.space_x = 2
         self.box_y = 50
@@ -79,8 +81,11 @@ class Game(Gtk.HBox):
         elif scale_y < scale_x:
             scale = scale_y
         else:
-            scale = scale_x
+            scale = scale_y
         print(scale)
+        print(scale_y)
+        print(scale_x)
+        self.scale = scale
         self.box_x = 50*scale
         self.box_y = 50*scale
         self.con_x = 6*scale
@@ -146,11 +151,38 @@ class Game(Gtk.HBox):
         self.init_and_scale()
         
     def solve_problem_2(self,size):
-        self.grid = grid.Grid(2,size)
-        self.start_point ,self.stop_point = self.problem_1_start_stop()
+        self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
+        print(self.start_point)
+        print(self.stop_point)
+        self.grid = grid.Grid(2,size,self.start_point,self.stop_point)
         self.robot = robot.Robot(self)
         self.init_and_scale()
-        
+ 
+    def problem_2_start_stop(self,size_x,size_y):
+        random_num = random.randint(0,4)
+        start_point = -1
+        stop_point = -1
+        print(random_num)
+        if random_num == 0:
+            start_point = (1,1)
+            stop_point = (size_x-2,size_y-2)
+        elif random_num == 1:
+            #sağ üst in
+            start_point = (size_x-2,1)
+            stop_point = (1,size_y-2)
+        elif random_num == 2:
+            #sol alt in
+            start_point = (1,size_y-2)
+            stop_point = (size_x-2,1)
+        elif random_num == 3:
+            #sağ alt in
+            start_point = (size_x-2,size_y-2)
+            stop_point = (1,1)
+        else:
+            start_point = (1,1)
+            stop_point = (size_x-2,size_y-2)
+        return (start_point, stop_point)
+
     def problem_1_start_stop(self):
         start_point = self.get_point()
         stop_point = self.get_point()
@@ -169,12 +201,6 @@ class Game(Gtk.HBox):
             return self.get_point()
         else:
             return (x,y)
-            
-    #yer tutucu komple düzenlenmeli
-    def problem_2_start_stop(self):
-        start_point = get_point()
-        stop_point = get_point()
-        return 
         
     def draw_all(self,widget,cr):
         #print(self.grid.maze)
@@ -238,14 +264,15 @@ class Game(Gtk.HBox):
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
                         (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
-            #self.view_depth(cr,m_node)
+            self.view_depth(cr,m_node)
         self.drawing_area.queue_draw()
 
     def view_depth(self,cr,m_node):
             x = m_node.x
             y = m_node.y
-            cr.set_source_rgb(0.8,0.8,0.8)
+            cr.set_source_rgb(0.5,0.1,0.1)
             cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.set_font_size(12*self.scale)
             cr.text_path(str(m_node.real_depth))
             cr.stroke()
 

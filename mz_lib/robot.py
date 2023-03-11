@@ -23,12 +23,16 @@ class Robot():
         see_list = self.around(x,y)
         for i in see_list:
             i.is_saw = True
+
+    def set_depth(self):
+        see_list = self.parent.grid.nodes.values()
         for i in see_list:
-            if i.type == 0:
+            if i.type == 0 and i.is_saw:
                 nbh = self.around(i.x,i.y)
                 nums = []
                 for x in nbh:
-                    nums.append(x.real_depth)
+                    if x.real_depth != -1:
+                        nums.append(x.real_depth)
                 smallest_depth = self.smallest(nums)
                 if i.real_depth > smallest_depth +1 or i.real_depth == -1:
                     i.real_depth = smallest_depth +1
@@ -195,7 +199,9 @@ class Robot():
             self.found(self.x,self.y)
             self.founded = True
             self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
+            self.set_depth()
             return False
-        self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
+        self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth
         print(self.x,self.y)
+        self.set_depth()
         return True

@@ -13,6 +13,9 @@ class Node():
         self.is_short_way = False
         self.in_way = None
         self.out_way = None
+        self.map_childs = []
+        self.map_parents = []
+        self.map_setted = False
 
     def add_child(self,child):
         self.childs.append(child)

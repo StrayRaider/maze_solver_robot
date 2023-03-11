@@ -17,7 +17,7 @@ class MyWindow(Gtk.Window):
         self.game = game.Game(self)
         self.stack.add_titled(self.game,"game","choice_screen")
         self.problem = 0
-        self.max_x = 1150
+        self.max_x = 1900
         self.max_y = 1000
         self.set_size_request(self.max_x,self.max_y)
 
