@@ -270,11 +270,11 @@ class Game(Gtk.HBox):
     def view_depth(self,cr,m_node):
             x = m_node.x
             y = m_node.y
-            cr.set_source_rgb(0.5,0.1,0.1)
-            cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
-            cr.set_font_size(12*self.scale)
-            cr.text_path(str(m_node.real_depth))
-            cr.stroke()
+            cr.set_source_rgb(0.3,0,0)
+            cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/4,((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.set_font_size(18*self.scale)
+            cr.show_text(str(m_node.real_depth))
+            #cr.stroke()
 
     def update_labels(self):
         self.move_c_label.set_label("move : "+str(self.robot.move_c))

@@ -36,6 +36,7 @@ class Robot():
                 smallest_depth = self.smallest(nums)
                 if i.real_depth > smallest_depth +1 or i.real_depth == -1:
                     i.real_depth = smallest_depth +1
+                    self.set_depth()
 
     def smallest(self,num_list):
         new_list = []
