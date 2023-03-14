@@ -76,7 +76,7 @@ class Robot():
         x = self.x
         y = self.y
         # kırmızı yakındaysa direkt ulaş
-        if self.is_stop_near(x,y):
+        if self.parent.is_stop_near(x,y):
             self.move_f(*self.parent.stop_point)
         else:
             rd = random.randint(0,3)
@@ -115,17 +115,6 @@ class Robot():
                     #parent(geri dönülen) node un çıkışını kaldır
                     self.grid.nodes[(self.x,self.y)].out_way = None
                     self.grid.nodes[(self.x,self.y)].childs = []
-
-    def is_stop_near(self,x,y):
-        if self.parent.stop_point[0] == x-1 and self.parent.stop_point[1] == y:
-            return True
-        elif self.parent.stop_point[0] == x+1 and self.parent.stop_point[1] == y:
-            return True
-        if self.parent.stop_point[0] == x and self.parent.stop_point[1] == y-1:
-            return True
-        elif self.parent.stop_point[0] == x and self.parent.stop_point[1] == y+1:
-            return True
-        return False
 
     def move_f(self,x,y):
         self.grid.nodes[(x,y)].is_moved = True
@@ -187,10 +176,5 @@ class Robot():
     def update(self):
         if not self.founded:
             self.move()
-        if self.x == self.parent.stop_point[0] and self.y == self.parent.stop_point[1]:
-            self.found(self.x,self.y)
-            self.founded = True
-            self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
-            return False
         self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth
         return True

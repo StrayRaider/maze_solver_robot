@@ -33,6 +33,10 @@ class Grid():
                 y+=1
             x+=1
 
+    def change_barrier(self):
+        self.set_threes(self.maze)
+        self.set_two(self.maze)
+
     def read_from_url(self,url):
         maze = []
         response = requests.get(url)
@@ -54,6 +58,89 @@ class Grid():
                 maze.append(x)
         maze.append(top_bottom)
         return maze
+
+    def set_threes(self,maze):
+        y = 0
+        for i in maze:
+            x = 0
+            for j in i:
+                if maze[x][y] == 3:
+                    random_num = random.randint(0,4)
+                    if random_num == 0:
+                        self.make_T(maze,x,y)
+                    elif random_num == 1:
+                        self.make_L(maze,x,y)
+                    else:
+                        self.make_I(maze,x,y)
+                x +=1
+            y+=1
+
+    def set_two(self,maze):
+        y = 0
+        for i in maze:
+            x = 0
+            for j in i:
+                if maze[x][y] == 2:
+                    random_num = random.randint(0,4)
+                    if random_num == 0:
+                        self.make_Sl(maze,x,y)
+                    elif random_num == 1:
+                        self.make_V(maze,x,y)
+                    else:
+                        self.make_H(maze,x,y)
+                x +=1
+            y+=1
+
+    def make_Sl(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+
+    def make_V(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 0
+
+    def make_H(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 0
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+
+    def make_L(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 1
+        maze[x+2][y+1] = 0
+        maze[x+2][y+2] = 0
+
+    def make_T(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 1
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 0
+        maze[x+2][y+1] = 1
+        maze[x+2][y+2] = 0
+
+    def make_I(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 1
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 1
+        maze[x+2][y+1] = 1
+        maze[x+2][y+2] = 1
 
     def read_generate(self,path):
         maze = []

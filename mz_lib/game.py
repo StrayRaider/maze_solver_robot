@@ -156,6 +156,7 @@ class Game(Gtk.HBox):
     def solve_problem_1(self,path):
         self.grid = grid.Grid(1,path)
         self.start_point ,self.stop_point = self.problem_1_start_stop()
+        self.grid.change_barrier()
         self.robot = robot.Robot(self)
         self.init_and_scale()
         
@@ -287,7 +288,23 @@ class Game(Gtk.HBox):
         self.parent_c_label.set_label("turning back : "+str(self.robot.parent_back_c))
         self.active_depth_label.set_label("active depth : "+str(self.robot.active_node_depth))
 
+    def is_stop_near(self,x,y):
+        if self.stop_point[0] == x-1 and self.stop_point[1] == y:
+            return True
+        elif self.stop_point[0] == x+1 and self.stop_point[1] == y:
+            return True
+        if self.stop_point[0] == x and self.stop_point[1] == y-1:
+            return True
+        elif self.stop_point[0] == x and self.stop_point[1] == y+1:
+            return True
+        return False
+
     def update(self):
+        if self.robot.x == self.stop_point[0] and self.robot.y == self.stop_point[1]:
+            self.robot.found(self.robot.x,self.robot.y)
+            self.robot.founded = True
+            self.robot.active_node_depth = self.robot.founded_depth = self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth 
+            return False
         if self.speed_changed == True:
             self.speed_changed = False
             return False
