@@ -11,7 +11,7 @@ class MyWindow(Gtk.Window):
         self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.set_transition_duration(1000)
         self.stack.add_titled(problems.Problems(self),"problem_select","choice_screen")
-        self.stack.add_titled(fileChs.FileChs(self),"file_chooser","choice_screen")
+        #self.stack.add_titled(fileChs.FileChs(self),"file_chooser","choice_screen")
         self.stack.add_titled(select_size.Select_size(self),"select_size","choice_screen")
         self.stack.add_titled(read_url.Select_size(self),"read_url","choice_screen")
         self.game = game.Game(self)

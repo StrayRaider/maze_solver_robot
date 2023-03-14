@@ -72,15 +72,12 @@ class Game(Gtk.HBox):
     def set_depth_label(self,widget):
         if self.view_depth_label == True:
             self.view_depth_label = False
-            print("label : ",self.view_depth_label)
         else:
             self.view_depth_label = True
 
     def init_and_scale(self):
         count_x = len(self.grid.maze)
         count_y = len(self.grid.maze[0])
-        print(count_y)
-        print(count_x)
         self.box_x = 50
         self.space_x = 2
         self.box_y = 50
@@ -98,9 +95,6 @@ class Game(Gtk.HBox):
             scale = scale_y
         else:
             scale = scale_y
-        print(scale)
-        print(scale_y)
-        print(scale_x)
         self.scale = scale
         self.box_x = 50*scale
         self.box_y = 50*scale
@@ -108,7 +102,6 @@ class Game(Gtk.HBox):
         self.con_y = 25*scale
         self.space_x = 2*scale
         self.space_y = 2*scale
-        print(self.box_x)
 
         self.duvar = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/duvar.png", self.box_x, self.box_y, True)
         self.zemin_w = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin.png", self.box_x, self.box_y, True)
@@ -155,7 +148,6 @@ class Game(Gtk.HBox):
         self.start_time = datetime.datetime.now()
         
     def start(self,problem,size_path = None,maze_hardness = None):
-        print(problem,".problem")
         if problem == 1:
             self.solve_problem_1(size_path)
         if problem == 2:
@@ -169,8 +161,6 @@ class Game(Gtk.HBox):
         
     def solve_problem_2(self,size,maze_hardness):
         self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
-        print(self.start_point)
-        print(self.stop_point)
         self.grid = grid.Grid(2,size,self.start_point,self.stop_point,maze_hardness)
         self.robot = robot.Robot(self)
         self.init_and_scale()
@@ -179,7 +169,6 @@ class Game(Gtk.HBox):
         random_num = random.randint(0,4)
         start_point = -1
         stop_point = -1
-        print(random_num)
         if random_num == 0:
             start_point = (1,1)
             stop_point = (size_x-2,size_y-2)
@@ -204,7 +193,9 @@ class Game(Gtk.HBox):
         start_point = self.get_point()
         stop_point = self.get_point()
         #if start and stop is same change the stop point
-        while stop_point == start_point:
+        dist_x = abs(start_point[0]-stop_point[0])
+        dist_y = abs(start_point[1]-stop_point[1])
+        while stop_point == start_point and dist_x+dist_y<4:
             stop_point = self.get_point()
         return start_point, stop_point
     
@@ -212,15 +203,12 @@ class Game(Gtk.HBox):
         #random start and stop point generator
         x = random.randint(0,len(self.grid.maze)-1)
         y = random.randint(0,len(self.grid.maze[0])-1)
-        #print(self.grid.maze)
-        #print(self.grid.maze[x][y])
         if self.grid.maze[x][y] != 0:
             return self.get_point()
         else:
             return (x,y)
         
     def draw_all(self,widget,cr):
-        #print(self.grid.maze)
         cr.set_source_rgb(0,1,0)
         y = 0
         for i in self.grid.nodes.keys():

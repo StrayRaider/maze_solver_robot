@@ -23,6 +23,7 @@ class Robot():
         see_list = self.around(x,y)
         for i in see_list:
             i.is_saw = True
+        self.set_depth()
 
     def set_depth(self):
         see_list = self.parent.grid.nodes.values()
@@ -52,16 +53,16 @@ class Robot():
         return new_list[0]
 
     def around(self,x,y):
-        around = []
+        around_l = []
         if x+1 < len(self.grid.maze):
-            around.append(self.grid.nodes[(x+1,y)])
+            around_l.append(self.grid.nodes[(x+1,y)])
         if x-1 >= 0:
-            around.append(self.grid.nodes[(x-1,y)])
+            around_l.append(self.grid.nodes[(x-1,y)])
         if y+1 < len(self.grid.maze[0]):
-            around.append(self.grid.nodes[(x,y+1)])
+            around_l.append(self.grid.nodes[(x,y+1)])
         if y-1 >= 0:
-            around.append(self.grid.nodes[(x,y-1)])
-        return around
+            around_l.append(self.grid.nodes[(x,y-1)])
+        return around_l
 
     def is_able_to_move(self,x,y):
         if self.grid.maze[x][y] != 0:
@@ -106,7 +107,6 @@ class Robot():
                     #üzerinde olunan node un girişini kaldır
                     self.grid.nodes[(self.x,self.y)].in_way = None
                     self.active_depth -= 1
-                    print(self.active_depth)
                     self.grid.nodes[(self.x,self.y)].is_used = False
                     x = self.grid.nodes[(self.x,self.y)].parent.x
                     y = self.grid.nodes[(self.x,self.y)].parent.y
@@ -115,7 +115,6 @@ class Robot():
                     #parent(geri dönülen) node un çıkışını kaldır
                     self.grid.nodes[(self.x,self.y)].out_way = None
                     self.grid.nodes[(self.x,self.y)].childs = []
-                    print("parenta dönüldü")
 
     def is_stop_near(self,x,y):
         if self.parent.stop_point[0] == x-1 and self.parent.stop_point[1] == y:
@@ -129,7 +128,6 @@ class Robot():
         return False
 
     def move_f(self,x,y):
-        print(self.active_depth)
         self.grid.nodes[(x,y)].is_moved = True
         self.grid.nodes[(x,y)].is_used = True
         self.grid.nodes[(x,y)].is_saw = True
@@ -154,7 +152,6 @@ class Robot():
             way = "right"
         elif y == -1:
             way = "left"
-        print("atanan : ",way)
         m_node.in_way = way
         m_node.parent.out_way = way
 
@@ -173,25 +170,19 @@ class Robot():
 
     def found(self,x,y):
         self.founded_depth = self.grid.nodes[(x,y)].real_depth
-        print("HEREEE ! : ",self.grid.nodes[(x,y)].real_depth)
-        print("found started")
-        print("founded loc : ",x,y)
         self.grid.nodes[(x,y)].is_short_way = True
         back_node = self.go_to_small(x,y)
         found_way = [back_node]
         found_way.append(self.grid.nodes[(x,y)])
         back_node.is_short_way = True
-        print("back_mode 1 : ",back_node.x,back_node.y)
         found_way.append(back_node)
         while 1:
             if not back_node.real_depth:
                 break
-            print("back_mode : ",back_node.x,back_node.y)
-            print(found_way)
             back_node = self.go_to_small(back_node.x,back_node.y)
             found_way.append(back_node)
             back_node.is_short_way = True
-        print(len(found_way))
+        print("bulunan yol uzunluğu : ",len(found_way))
 
     def update(self):
         if not self.founded:
@@ -200,9 +191,6 @@ class Robot():
             self.found(self.x,self.y)
             self.founded = True
             self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth 
-            self.set_depth()
             return False
         self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth
-        print(self.x,self.y)
-        self.set_depth()
         return True

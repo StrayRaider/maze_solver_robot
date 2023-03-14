@@ -37,6 +37,5 @@ class Select_size(Gtk.VBox):
         if url == None:
             url = self.url_entry.get_text()
         self.parent.stack.set_visible_child_name("game")
-        print("URL : ",url)
         self.parent.game.start(1,url)
         #self.parent.game.start(1,"./mz_lib/maps/url1.txt")
