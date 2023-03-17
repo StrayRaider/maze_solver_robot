@@ -59,20 +59,30 @@ class Game(Gtk.HBox):
         self.active_depth_label = Gtk.Label("active depth : 0")
         self.but_part.pack_start(self.active_depth_label,0,0,5)
 
-        self.view_depth_but = Gtk.Button(label="View Depths")
+        self.view_depth_but = Gtk.Button(label="Show Depths")
         self.view_depth_but.connect("clicked",self.set_depth_label)
         self.but_part.pack_start(self.view_depth_but,0,0,5)
-        self.view_depth_label = True
+        self.view_depth_label = False
 
         self.start_time = datetime.datetime.now()
         self.stop_time = datetime.datetime.now()
         self.time_label = Gtk.Label(str((self.stop_time-self.start_time).seconds))
         self.but_part.pack_start(self.time_label,0,0,5)
 
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.but_part.pack_start(self.turn_back_but,0,0,5)
+
+    def visible(self):
+        self.active_depth_label.set_label("active depth : 0")
+        self.parent_c_label.set_label("turning back : 0")
+        self.move_c_label.set_label("move : 0")
+
     def set_depth_label(self,widget):
         if self.view_depth_label == True:
             self.view_depth_label = False
+            self.view_depth_but.set_label("Show Depths")
         else:
+            self.view_depth_but.set_label("Hide Depths")
             self.view_depth_label = True
 
     def init_and_scale(self):
@@ -100,6 +110,10 @@ class Game(Gtk.HBox):
         self.box_y = 50*scale
         self.con_x = 6*scale
         self.con_y = 25*scale
+        if self.con_x < 1:
+            self.con_x = 1
+        if self.con_y < 1:
+            self.con_y = 1
         self.space_x = 2*scale
         self.space_y = 2*scale
 
@@ -156,15 +170,26 @@ class Game(Gtk.HBox):
     def solve_problem_1(self,path):
         self.grid = grid.Grid(1,path)
         self.start_point ,self.stop_point = self.problem_1_start_stop()
+        #firstly start stop points generates than 3x3 and 2x2 barrier shape changings mades
         self.grid.change_barrier()
         self.robot = robot.Robot(self)
         self.init_and_scale()
+        self.turn_back_but.connect("clicked",self.turn_back_2)
         
     def solve_problem_2(self,size,maze_hardness):
         self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
         self.grid = grid.Grid(2,size,self.start_point,self.stop_point,maze_hardness)
         self.robot = robot.Robot(self)
         self.init_and_scale()
+        self.turn_back_but.connect("clicked",self.turn_back_1)
+
+    def turn_back_1(self,widget):
+        self.visible()
+        self.parent.stack.set_visible_child_name("select_size")
+
+    def turn_back_2(self,widget):
+        self.visible()
+        self.parent.stack.set_visible_child_name("read_url")
  
     def problem_2_start_stop(self,size_x,size_y):
         random_num = random.randint(0,4)
@@ -281,7 +306,6 @@ class Game(Gtk.HBox):
             cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/4,((self.box_x+self.space_x)*x)+self.box_x/2)
             cr.set_font_size(18*self.scale)
             cr.show_text(str(m_node.real_depth))
-            #cr.stroke()
 
     def update_labels(self):
         self.move_c_label.set_label("move : "+str(self.robot.move_c))
@@ -303,6 +327,7 @@ class Game(Gtk.HBox):
         if self.robot.x == self.stop_point[0] and self.robot.y == self.stop_point[1]:
             self.robot.found(self.robot.x,self.robot.y)
             self.robot.founded = True
+            self.robot.set_depth()
             self.robot.active_node_depth = self.robot.founded_depth = self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth 
             return False
         if self.speed_changed == True:

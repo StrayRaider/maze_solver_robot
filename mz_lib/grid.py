@@ -1,6 +1,9 @@
 import os, random, requests
 from mz_lib import node
 
+import sys
+sys.setrecursionlimit(1000000)
+
 class Grid():
     def __init__(self,problem,path_size,start_p=None,stop_p=None,maze_hardness=None):
         #path_size is a variable able to carry path or size
@@ -36,6 +39,7 @@ class Grid():
     def change_barrier(self):
         self.set_threes(self.maze)
         self.set_two(self.maze)
+        self.gen_nodes()
 
     def read_from_url(self,url):
         maze = []
