@@ -27,6 +27,10 @@ class Select_size(Gtk.VBox):
         self.url_box.pack_start(self.url_but_1,1,1,5)
         self.url_box.pack_start(self.url_but_2,1,1,5)
 
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.vert.pack_start(self.turn_back_but,0,0,5)
+        self.turn_back_but.connect("clicked",self.turn_back)
+
     def url_but_1_c(self,widget):
         self.start(None,"http://bilgisayar.kocaeli.edu.tr/prolab2/url1.txt")
 
@@ -39,3 +43,6 @@ class Select_size(Gtk.VBox):
         self.parent.stack.set_visible_child_name("game")
         self.parent.game.start(1,url)
         #self.parent.game.start(1,"./mz_lib/maps/url1.txt")
+
+    def turn_back(self,widget):
+        self.parent.stack.set_visible_child_name("problem_select")

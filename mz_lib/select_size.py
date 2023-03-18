@@ -30,6 +30,10 @@ class Select_size(Gtk.VBox):
         self.vert.pack_start(self.hardness_combo,0,0,5)
         self.maze_hardness = True
 
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.vert.pack_start(self.turn_back_but,0,0,5)
+        self.turn_back_but.connect("clicked",self.turn_back)
+
     def get_size(self,widget):
         self.x = self.entry_x.get_text()
         self.y = self.entry_y.get_text()
@@ -39,3 +43,6 @@ class Select_size(Gtk.VBox):
             self.maze_hardness = True
         self.parent.game.start(2,(self.x,self.y),self.maze_hardness)
         self.parent.stack.set_visible_child_name("game")
+
+    def turn_back(self,widget):
+        self.parent.stack.set_visible_child_name("problem_select")
