@@ -176,5 +176,6 @@ class Robot():
     def update(self):
         if not self.founded:
             self.move()
-        self.active_node_depth = self.founded_depth = self.grid.nodes[(self.x,self.y)].real_depth
+        self.active_node_depth= self.grid.nodes[(self.x,self.y)].real_depth
+        self.founded_depth = self.active_node_depth
         return True
