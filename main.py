@@ -1,6 +1,6 @@
 import random, gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from mz_lib import grid, problems, game, select_size, fileChs, read_url
 
 class MyWindow(Gtk.Window):
@@ -22,6 +22,20 @@ class MyWindow(Gtk.Window):
         self.set_size_request(self.max_x,self.max_y)
 
 win = MyWindow()
+css_provider = Gtk.CssProvider()
+css = """window{
+background-image: url("maze_wp_3.jpg");
+background-repeat: no-repeat;
+background-size: cover;
+background-position: center center;
+}"""
+css_provider.load_from_data(css.encode('UTF-8'))
+screen = Gdk.Screen.get_default()
+style_context = win.get_style_context()
+style_context.add_provider_for_screen(screen, css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
