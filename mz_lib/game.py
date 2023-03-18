@@ -66,16 +66,20 @@ class Game(Gtk.HBox):
 
         self.start_time = datetime.datetime.now()
         self.stop_time = datetime.datetime.now()
-        self.time_label = Gtk.Label(str((self.stop_time-self.start_time).seconds))
+        self.time_label = Gtk.Label("Ms : "+str((self.stop_time-self.start_time).seconds))
         self.but_part.pack_start(self.time_label,0,0,5)
 
         self.turn_back_but = Gtk.Button(label="Turn Back")
         self.but_part.pack_start(self.turn_back_but,0,0,5)
 
+        self.maze_start_x = 0
+        self.maze_start_y = 0
+
     def visible(self):
-        self.active_depth_label.set_label("active depth : 0")
-        self.parent_c_label.set_label("turning back : 0")
-        self.move_c_label.set_label("move : 0")
+        self.active_depth_label.set_text("active depth : 0")
+        self.parent_c_label.set_text("turning back : 0")
+        self.move_c_label.set_text("move : 0")
+        self.time_label.set_text("Ms : "+"0")
 
     def set_depth_label(self,widget):
         if self.view_depth_label == True:
@@ -132,6 +136,15 @@ class Game(Gtk.HBox):
         self.cizgi_d = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_d.png", self.con_x, self.con_y, True)
         self.cizgi_y = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_y.png", self.con_y, self.con_x, True)
         self.start_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bb.png", self.box_x, self.box_y, True)
+
+        maze_size_x = count_x * (self.box_x + self.space_x)
+        maze_size_y = count_y * (self.box_y + self.space_y)
+        self.maze_start_x = 0
+        self.maze_start_y = 0
+        if maze_size_x < self.max_x_px:
+            self.maze_start_x = (self.max_x_px - maze_size_x)/2
+        if maze_size_y < self.max_y_px:
+            self.maze_start_y = (self.max_y_px - maze_size_y)/2
 
     def set_faster(self,widget,speed_up = 2):
         self.timer = None
@@ -233,7 +246,7 @@ class Game(Gtk.HBox):
             return self.get_point()
         else:
             return (x,y)
-        
+
     def draw_all(self,widget,cr):
         cr.set_source_rgb(0,1,0)
         y = 0
@@ -247,53 +260,53 @@ class Game(Gtk.HBox):
             if m_node.is_short_way:
                 cr.set_source_rgb(0.9,0.3,0.3)
             elif x == self.stop_point[0] and y == self.stop_point[1]:
-                Gdk.cairo_set_source_pixbuf(cr, self.zemin_g, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_g, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif x == self.start_point[0] and y == self.start_point[1]:
-                Gdk.cairo_set_source_pixbuf(cr, self.start_img, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.is_used:
-                Gdk.cairo_set_source_pixbuf(cr, self.zemin_b, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_b, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.is_moved:
-                Gdk.cairo_set_source_pixbuf(cr, self.zemin_y, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_y, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif self.grid.maze[x][y] == 0:
-                Gdk.cairo_set_source_pixbuf(cr, self.zemin_w, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_w, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             else:
-                Gdk.cairo_set_source_pixbuf(cr, self.duvar, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
-            cr.rectangle((self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x,self.box_x,self.box_y)
+                Gdk.cairo_set_source_pixbuf(cr, self.duvar, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            cr.rectangle(self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x,self.box_x,self.box_y)
             cr.fill()
             if not m_node.is_saw:
-                Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
                 cr.paint()
             if self.robot.x == x and self.robot.y == y:
-                Gdk.cairo_set_source_pixbuf(cr, self.robot_p, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.robot_p, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
                 cr.paint()
             #yol çizimi:
             if m_node.in_way != None:
                 if m_node.in_way == "down":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
-                        ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/2,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
                 elif m_node.in_way == "up":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
-                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),self.maze_start_x+(self.box_x+self.space_x)*x)
                 elif m_node.in_way == "left":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
-                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 elif m_node.in_way == "right":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
-                        (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                        self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
             if m_node.out_way != None:
                 if m_node.out_way == "up":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
-                        ((self.box_y+self.space_y)*y)+self.box_y/2,((self.box_x+self.space_x)*x)+self.box_x/2)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/2,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
                 elif m_node.out_way == "down":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
-                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),(self.box_x+self.space_x)*x)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),self.maze_start_x+(self.box_x+self.space_x)*x)
                 elif m_node.out_way == "right":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
-                        ((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 elif m_node.out_way == "left":
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
-                        (self.box_y+self.space_y)*y,((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                        self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
             if m_node.real_depth != -1 and self.view_depth_label:
                 self.view_depth(cr,m_node)
@@ -303,7 +316,7 @@ class Game(Gtk.HBox):
             x = m_node.x
             y = m_node.y
             cr.set_source_rgb(0.3,0,0)
-            cr.move_to(((self.box_y+self.space_y)*y)+self.box_y/4,((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.move_to(self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/4,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
             cr.set_font_size(18*self.scale)
             cr.show_text(str(m_node.real_depth))
 
@@ -328,7 +341,9 @@ class Game(Gtk.HBox):
             self.robot.found(self.robot.x,self.robot.y)
             self.robot.founded = True
             self.robot.set_depth()
-            self.robot.active_node_depth = self.robot.founded_depth = self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth 
+            self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
+            self.robot.founded_depth = self.robot.active_node_depth
+            self.update_labels()
             return False
         if self.speed_changed == True:
             self.speed_changed = False
@@ -341,5 +356,6 @@ class Game(Gtk.HBox):
             return False
         self.update_labels()
         self.stop_time = datetime.datetime.now()
-        self.time_label.set_text(str((self.stop_time-self.start_time).total_seconds() * 1000))
+        #milliseconds
+        self.time_label.set_text("Ms : "+str((self.stop_time-self.start_time).total_seconds() * 1000))
         return ret
