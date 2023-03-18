@@ -76,6 +76,9 @@ class Game(Gtk.HBox):
         self.maze_start_y = 0
 
     def visible(self):
+        self.started = False
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but.set_image(image)
         self.active_depth_label.set_text("active depth : 0")
         self.parent_c_label.set_text("turning back : 0")
         self.move_c_label.set_text("move : 0")
