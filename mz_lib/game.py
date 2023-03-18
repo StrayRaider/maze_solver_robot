@@ -36,7 +36,7 @@ class Game(Gtk.HBox):
         self.speed_changed = False
 
         self.finish = Gtk.Button()
-        self.finish.set_label("Faster")
+        self.finish.set_label("Finish")
         self.finish.connect("clicked",self.finish_maze)
 
         self.but_part = Gtk.VBox()
@@ -160,7 +160,7 @@ class Game(Gtk.HBox):
 
     def finish_maze(self,widget):
         self.start_but_clicked(None)
-        self.set_faster(None,500)
+        self.set_faster(None,10000)
         self.start_but_clicked(None)
 
     def start_but_clicked(self,widget):
