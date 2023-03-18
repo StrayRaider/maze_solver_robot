@@ -237,7 +237,10 @@ class Game(Gtk.HBox):
         #if start and stop is same change the stop point
         dist_x = abs(start_point[0]-stop_point[0])
         dist_y = abs(start_point[1]-stop_point[1])
-        while stop_point == start_point and dist_x+dist_y<4:
+        print("dist : ",dist_x+dist_y)
+        print(start_point[0]-stop_point[0])
+        print(start_point[1]-stop_point[1])
+        while stop_point == start_point or dist_x+dist_y<4:
             stop_point = self.get_point()
         return start_point, stop_point
     
