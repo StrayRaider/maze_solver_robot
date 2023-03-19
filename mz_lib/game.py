@@ -63,6 +63,15 @@ class Game(Gtk.HBox):
         self.view_depth_but.connect("clicked",self.set_depth_label)
         self.but_part.pack_start(self.view_depth_but,0,0,5)
         self.view_depth_label = False
+        self.short_way_but = Gtk.Button(label="Show Short Way")
+        self.short_way_but.connect("clicked",self.short_way_label)
+        self.but_part.pack_start(self.short_way_but,0,0,5)
+        self.short_way = False
+
+        self.view_game_depth_but = Gtk.Button(label="Show Game Depths")
+        self.view_game_depth_but.connect("clicked",self.set_game_depth_label)
+        self.but_part.pack_start(self.view_game_depth_but,0,0,5)
+        self.view_game_depth_label = False
 
         self.start_time = datetime.datetime.now()
         self.stop_time = datetime.datetime.now()
@@ -74,15 +83,36 @@ class Game(Gtk.HBox):
 
         self.maze_start_x = 0
         self.maze_start_y = 0
+        self.is_not_fast = True
 
     def visible(self):
-        self.started = False
         image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
         self.start_but.set_image(image)
         self.active_depth_label.set_text("active depth : 0")
         self.parent_c_label.set_text("turning back : 0")
         self.move_c_label.set_text("move : 0")
         self.time_label.set_text("Ms : "+"0")
+        self.fastness = 1000
+
+    def short_way_label(self,widget):
+        if self.short_way == True:
+            self.short_way = False
+            self.short_way_but.set_label("Show Short Way")
+            self.reset_depth()
+        else:
+            self.short_way_but.set_label("Hide Short Way")
+            self.short_way = True
+            self.set_depth()
+            #self.found(*self.stop_point)
+
+    def visible(self):
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but.set_image(image)
+        self.active_depth_label.set_text("active depth : 0")
+        self.parent_c_label.set_text("turning back : 0")
+        self.move_c_label.set_text("move : 0")
+        self.time_label.set_text("Ms : "+"0")
+        self.fastness = 1000
 
     def set_depth_label(self,widget):
         if self.view_depth_label == True:
@@ -91,6 +121,14 @@ class Game(Gtk.HBox):
         else:
             self.view_depth_but.set_label("Hide Depths")
             self.view_depth_label = True
+
+    def set_game_depth_label(self,widget):
+        if self.view_game_depth_label == True:
+            self.view_game_depth_label = False
+            self.view_game_depth_but.set_label("Show Game Depths")
+        else:
+            self.view_game_depth_but.set_label("Hide Game Depths")
+            self.view_game_depth_label = True
 
     def init_and_scale(self):
         count_x = len(self.grid.maze)
@@ -178,6 +216,7 @@ class Game(Gtk.HBox):
         self.start_time = datetime.datetime.now()
         
     def start(self,problem,size_path = None,maze_hardness = None):
+        self.problem = problem
         if problem == 1:
             self.solve_problem_1(size_path)
         if problem == 2:
@@ -189,6 +228,7 @@ class Game(Gtk.HBox):
         #firstly start stop points generates than 3x3 and 2x2 barrier shape changings mades
         self.grid.change_barrier()
         self.robot = robot.Robot(self)
+        self.set_depth()
         self.init_and_scale()
         self.turn_back_but.connect("clicked",self.turn_back_2)
         
@@ -196,6 +236,7 @@ class Game(Gtk.HBox):
         self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
         self.grid = grid.Grid(2,size,self.start_point,self.stop_point,maze_hardness)
         self.robot = robot.Robot(self)
+        self.set_depth()
         self.init_and_scale()
         self.turn_back_but.connect("clicked",self.turn_back_1)
 
@@ -265,6 +306,8 @@ class Game(Gtk.HBox):
             #    Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
             if m_node.is_short_way:
                 cr.set_source_rgb(0.9,0.3,0.3)
+            elif m_node.is_game_short_way:
+                cr.set_source_rgb(0.3,0.3,0.9)
             elif x == self.stop_point[0] and y == self.stop_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.zemin_g, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif x == self.start_point[0] and y == self.start_point[1]:
@@ -314,6 +357,8 @@ class Game(Gtk.HBox):
                     Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
                         self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
                 cr.paint()
+            if self.view_game_depth_label:
+                self.view_g_depth(cr,m_node)
             if m_node.real_depth != -1 and self.view_depth_label:
                 self.view_depth(cr,m_node)
         self.drawing_area.queue_draw()
@@ -325,6 +370,14 @@ class Game(Gtk.HBox):
             cr.move_to(self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/4,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
             cr.set_font_size(18*self.scale)
             cr.show_text(str(m_node.real_depth))
+
+    def view_g_depth(self,cr,m_node):
+            x = m_node.x
+            y = m_node.y
+            cr.set_source_rgb(0.3,0,0)
+            cr.move_to(self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/4,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.set_font_size(18*self.scale)
+            cr.show_text(str(m_node.g_real_depth))
 
     def update_labels(self):
         self.move_c_label.set_label("move : "+str(self.robot.move_c))
@@ -342,7 +395,91 @@ class Game(Gtk.HBox):
             return True
         return False
 
+    def smallest(self,num_list):
+        new_list = []
+        for i in num_list:
+            if i == -1:
+                pass
+            else:
+                new_list.append(i)
+        if len(new_list) == 0:
+            return 0
+        min_d = new_list[0]
+        new_list.sort()
+        return new_list[0]
+
+    def set_depth(self):
+        see_list = self.grid.nodes.values()
+        self.grid.nodes[(self.robot.x,self.robot.y)].g_saw = True
+        self.grid.nodes[(self.robot.x,self.robot.y)].g_real_depth = 0
+        for i in see_list:
+            if i.type == 0 and i.g_saw:
+                #self.barren_node(i)
+                nbh = self.around(i.x,i.y)
+                nums = []
+                for x in nbh:
+                    if x.g_real_depth != -1:
+                        nums.append(x.g_real_depth)
+                    x.g_saw = True
+                smallest_depth = self.smallest(nums)
+                if i.g_real_depth > smallest_depth +1 or i.g_real_depth == -1:
+                    i.g_real_depth = smallest_depth +1
+                    self.set_depth()
+                        
+    def around(self,x,y):
+        around_l = []
+        if x+1 < len(self.grid.maze):
+            around_l.append(self.grid.nodes[(x+1,y)])
+        if x-1 >= 0:
+            around_l.append(self.grid.nodes[(x-1,y)])
+        if y+1 < len(self.grid.maze[0]):
+            around_l.append(self.grid.nodes[(x,y+1)])
+        if y-1 >= 0:
+            around_l.append(self.grid.nodes[(x,y-1)])
+        return around_l
+
+    def reset_depth(self):
+        see_list = self.grid.nodes.values()
+        for i in see_list:
+            i.g_real_depth = -1
+            i.g_saw = False
+            i.is_game_short_way = False
+
+    def go_to_small(self,x,y):
+        around = self.around(x,y)
+        nums = []
+        for i in around:
+            nums.append(i.g_real_depth)
+        smallest_depth = self.smallest(nums)
+        small_node = None
+        for i in around:
+            if i.g_real_depth == smallest_depth:
+                small_node = i
+        return small_node
+
+    def found(self,x,y):
+        try:
+            self.grid.nodes[(x,y)].is_game_short_way = True
+            back_node = self.go_to_small(x,y)
+            found_way = [back_node]
+            found_way.append(self.grid.nodes[(x,y)])
+            back_node.is_game_short_way = True
+            found_way.append(back_node)
+            while 1:
+                print(back_node.g_real_depth)
+                if not back_node.g_real_depth:
+                    break
+                back_node = self.go_to_small(back_node.x,back_node.y)
+                found_way.append(back_node)
+                back_node.is_game_short_way = True
+            print("bulunan yol uzunluğu : ",len(found_way))
+        except:
+            pass
+
     def update(self):
+        if self.speed_changed == True:
+            self.speed_changed = False
+            return False
         if self.robot.x == self.stop_point[0] and self.robot.y == self.stop_point[1]:
             self.robot.found(self.robot.x,self.robot.y)
             self.robot.founded = True
@@ -350,9 +487,7 @@ class Game(Gtk.HBox):
             self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
             self.robot.founded_depth = self.robot.active_node_depth
             self.update_labels()
-            return False
-        if self.speed_changed == True:
-            self.speed_changed = False
+            self.reset_depth()
             return False
         ret = True
         if self.started:
@@ -361,6 +496,10 @@ class Game(Gtk.HBox):
         else:
             return False
         self.update_labels()
+        if self.short_way and self.is_not_fast and self.problem == 1:
+            self.reset_depth()
+            self.set_depth()
+            self.found(*self.stop_point)
         self.stop_time = datetime.datetime.now()
         #milliseconds
         self.time_label.set_text("Ms : "+str((self.stop_time-self.start_time).total_seconds() * 1000))

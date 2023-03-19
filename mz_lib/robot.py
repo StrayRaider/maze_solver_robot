@@ -22,13 +22,57 @@ class Robot():
         self.grid.nodes[(x,y)].is_saw = True
         see_list = self.around(x,y)
         for i in see_list:
-            i.is_saw = True
+            i.is_saw = True                
         self.set_depth()
+
+    def barren_node(self,node):
+        nbh = self.around(node.x,node.y)
+        closed_way = 0
+        if node.is_moved:
+            node.barren = False
+            return False
+        else:
+            if node.barren_p != None:
+                closed_way += 1
+            for nb in nbh:
+                if not nb.is_saw:
+                    node.barren = False
+                    return False
+                if nb.type == 1 or nb.barren or nb.is_moved:
+                    closed_way +=1
+            if closed_way >= 4:
+                node.barren = True
+                return True
+            ret = False
+            for nb in nbh:
+                if not nb.is_moved and nb.type == 0:
+                    parent = node.barren_p
+                    is_able = True
+                    if closed_way < 3:
+                        while parent != None:
+                            if nb == parent:
+                                is_able = False
+                                closed_way+=1
+                                break
+                            parent = parent.barren_p
+                        if is_able:
+                            print(nb.x,nb.y," ye ",node.x,node.y,"den gidildi")
+                            nb.barren_p = node
+                            node.barren_c = nb
+                            ret = self.barren_node(nb)
+            if closed_way >= 4 and ret:
+                child = node.barren_c
+                while child != None:
+                    child.barren = True
+                    child = child.barren_c
+                node.barren = True
+                return True
 
     def set_depth(self):
         see_list = self.parent.grid.nodes.values()
         for i in see_list:
             if i.type == 0 and i.is_saw:
+                #self.barren_node(i)
                 nbh = self.around(i.x,i.y)
                 nums = []
                 for x in nbh:
@@ -68,6 +112,8 @@ class Robot():
         if self.grid.maze[x][y] != 0:
             return 0
         if self.grid.nodes[(x,y)].is_moved:
+            return 0
+        if self.grid.nodes[(x,y)].barren:
             return 0
         return 1
 
@@ -144,7 +190,6 @@ class Robot():
         m_node.in_way = way
         m_node.parent.out_way = way
 
-
     def go_to_small(self,x,y):
         around = self.around(x,y)
         nums = []
@@ -174,7 +219,9 @@ class Robot():
         print("bulunan yol uzunluğu : ",len(found_way))
 
     def update(self):
-        if not self.founded:
+        if self.founded:
+            return False
+        else:
             self.move()
         self.active_node_depth= self.grid.nodes[(self.x,self.y)].real_depth
         self.founded_depth = self.active_node_depth

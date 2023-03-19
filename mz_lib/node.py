@@ -16,6 +16,12 @@ class Node():
         self.map_childs = []
         self.map_parents = []
         self.map_setted = False
+        self.barren = False
+        self.barren_p = None
+        self.barren_c = None
+        self.g_real_depth = -1
+        self.g_saw = False
+        self.is_game_short_way = False
 
     def add_child(self,child):
         self.childs.append(child)
