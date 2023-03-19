@@ -177,6 +177,8 @@ class Game(Gtk.HBox):
         self.cizgi_d = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_d.png", self.con_x, self.con_y, True)
         self.cizgi_y = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_y.png", self.con_y, self.con_x, True)
         self.start_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bb.png", self.box_x, self.box_y, True)
+        self.fv_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/fv.png", self.box_x, self.box_y, True)
+        self.final_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/final_v.png", self.box_x, self.box_y, True)
 
         maze_size_x = count_x * (self.box_x + self.space_x)
         maze_size_y = count_y * (self.box_y + self.space_y)
@@ -203,6 +205,7 @@ class Game(Gtk.HBox):
         self.start_but_clicked(None)
         self.set_faster(None,10000)
         self.start_but_clicked(None)
+        self.is_not_fast = False
 
     def start_but_clicked(self,widget):
         self.timer = GObject.timeout_add(self.fastness, self.update)
@@ -282,6 +285,8 @@ class Game(Gtk.HBox):
         print(start_point[0]-stop_point[0])
         print(start_point[1]-stop_point[1])
         while stop_point == start_point or dist_x+dist_y<4:
+            dist_x = abs(start_point[0]-stop_point[0])
+            dist_y = abs(start_point[1]-stop_point[1])
             stop_point = self.get_point()
         return start_point, stop_point
     
@@ -304,12 +309,8 @@ class Game(Gtk.HBox):
             # kare çizimi
             #if not m_node.is_saw:
             #    Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
-            if m_node.is_short_way:
-                cr.set_source_rgb(0.9,0.3,0.3)
-            elif m_node.is_game_short_way:
-                cr.set_source_rgb(0.3,0.3,0.9)
-            elif x == self.stop_point[0] and y == self.stop_point[1]:
-                Gdk.cairo_set_source_pixbuf(cr, self.zemin_g, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            if x == self.stop_point[0] and y == self.stop_point[1]:
+                Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif x == self.start_point[0] and y == self.start_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.is_used:
@@ -322,6 +323,12 @@ class Game(Gtk.HBox):
                 Gdk.cairo_set_source_pixbuf(cr, self.duvar, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             cr.rectangle(self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x,self.box_x,self.box_y)
             cr.fill()
+            if m_node.is_short_way:
+                Gdk.cairo_set_source_pixbuf(cr, self.final_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
+            if m_node.is_game_short_way:
+                Gdk.cairo_set_source_pixbuf(cr, self.fv_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
             if not m_node.is_saw:
                 Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
                 cr.paint()
@@ -445,6 +452,11 @@ class Game(Gtk.HBox):
             i.g_saw = False
             i.is_game_short_way = False
 
+    def reset_way(self):
+        see_list = self.grid.nodes.values()
+        for i in see_list:
+            i.is_game_short_way = False
+
     def go_to_small(self,x,y):
         around = self.around(x,y)
         nums = []
@@ -487,7 +499,7 @@ class Game(Gtk.HBox):
             self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
             self.robot.founded_depth = self.robot.active_node_depth
             self.update_labels()
-            self.reset_depth()
+            self.reset_way()
             return False
         ret = True
         if self.started:
