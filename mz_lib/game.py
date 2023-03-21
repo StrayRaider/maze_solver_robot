@@ -311,6 +311,8 @@ class Game(Gtk.HBox):
             #    Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
             if x == self.stop_point[0] and y == self.stop_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif m_node.barren:
+                Gdk.cairo_set_source_pixbuf(cr, self.fv_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif x == self.start_point[0] and y == self.start_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.is_used:
@@ -421,7 +423,6 @@ class Game(Gtk.HBox):
         self.grid.nodes[(self.robot.x,self.robot.y)].g_real_depth = 0
         for i in see_list:
             if i.type == 0 and i.g_saw:
-                #self.barren_node(i)
                 nbh = self.around(i.x,i.y)
                 nums = []
                 for x in nbh:

@@ -17,8 +17,7 @@ class Node():
         self.map_parents = []
         self.map_setted = False
         self.barren = False
-        self.barren_p = None
-        self.barren_c = None
+        self.b_moved = False
         self.g_real_depth = -1
         self.g_saw = False
         self.is_game_short_way = False

@@ -25,54 +25,10 @@ class Robot():
             i.is_saw = True                
         self.set_depth()
 
-    def barren_node(self,node):
-        nbh = self.around(node.x,node.y)
-        closed_way = 0
-        if node.is_moved:
-            node.barren = False
-            return False
-        else:
-            if node.barren_p != None:
-                closed_way += 1
-            for nb in nbh:
-                if not nb.is_saw:
-                    node.barren = False
-                    return False
-                if nb.type == 1 or nb.barren or nb.is_moved:
-                    closed_way +=1
-            if closed_way >= 4:
-                node.barren = True
-                return True
-            ret = False
-            for nb in nbh:
-                if not nb.is_moved and nb.type == 0:
-                    parent = node.barren_p
-                    is_able = True
-                    if closed_way < 3:
-                        while parent != None:
-                            if nb == parent:
-                                is_able = False
-                                closed_way+=1
-                                break
-                            parent = parent.barren_p
-                        if is_able:
-                            print(nb.x,nb.y," ye ",node.x,node.y,"den gidildi")
-                            nb.barren_p = node
-                            node.barren_c = nb
-                            ret = self.barren_node(nb)
-            if closed_way >= 4 and ret:
-                child = node.barren_c
-                while child != None:
-                    child.barren = True
-                    child = child.barren_c
-                node.barren = True
-                return True
-
     def set_depth(self):
         see_list = self.parent.grid.nodes.values()
         for i in see_list:
             if i.type == 0 and i.is_saw:
-                #self.barren_node(i)
                 nbh = self.around(i.x,i.y)
                 nums = []
                 for x in nbh:
@@ -117,6 +73,41 @@ class Robot():
             return 0
         return 1
 
+    def is_barren(self,x,y):
+        node = self.grid.nodes[(x,y)]
+        nbh = self.around(node.x,node.y)
+        cnt = 0
+        if not node.is_moved and node.type == 0:
+            if node.barren == True:
+                return True
+            for i in nbh:
+                if not i.is_saw:
+                    node.barren = False
+                    return False
+                if i.type ==1:
+                    cnt +=1
+                elif i.is_moved:
+                    cnt +=1
+                elif i.b_moved:
+                    cnt +=1
+            for i in nbh:
+                if i.type==0 and not i.is_moved:
+                    if not i.b_moved:
+                        node.b_moved = True
+                        ret = self.is_barren(i.x,i.y)
+                        node.b_moved = False
+                        if not ret:
+                            node.barren = False
+                            return False
+                        else:
+                            cnt+=1
+            if cnt == 4:
+                node.barren = True
+                return True
+            else:
+                node.barren = False
+                return False
+
     def move(self):
         self.move_c += 1
         x = self.x
@@ -125,6 +116,10 @@ class Robot():
         if self.parent.is_stop_near(x,y):
             self.move_f(*self.parent.stop_point)
         else:
+            self.is_barren(x+1,y)
+            self.is_barren(x-1,y)
+            self.is_barren(x,y+1)
+            self.is_barren(x,y-1)
             rd = random.randint(0,3)
             if rd == 0:
                 x+=1
