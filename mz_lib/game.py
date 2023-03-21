@@ -179,6 +179,8 @@ class Game(Gtk.HBox):
         self.start_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bb.png", self.box_x, self.box_y, True)
         self.fv_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/fv.png", self.box_x, self.box_y, True)
         self.final_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/final_v.png", self.box_x, self.box_y, True)
+        self.orange_z = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/orange_z.png", self.box_x, self.box_y, True)
+
 
         maze_size_x = count_x * (self.box_x + self.space_x)
         maze_size_y = count_y * (self.box_y + self.space_y)
@@ -312,7 +314,7 @@ class Game(Gtk.HBox):
             if x == self.stop_point[0] and y == self.stop_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.barren:
-                Gdk.cairo_set_source_pixbuf(cr, self.fv_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                Gdk.cairo_set_source_pixbuf(cr, self.orange_z, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif x == self.start_point[0] and y == self.start_point[1]:
                 Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
             elif m_node.is_used:
