@@ -481,13 +481,12 @@ class Game(Gtk.HBox):
             back_node.is_game_short_way = True
             found_way.append(back_node)
             while 1:
-                print(back_node.g_real_depth)
                 if not back_node.g_real_depth:
                     break
                 back_node = self.go_to_small(back_node.x,back_node.y)
                 found_way.append(back_node)
                 back_node.is_game_short_way = True
-            print("bulunan yol uzunluğu : ",len(found_way))
+            print("bulunan oyun yol uzunluğu : ",len(found_way))
         except:
             pass
 
@@ -496,13 +495,15 @@ class Game(Gtk.HBox):
             self.speed_changed = False
             return False
         if self.robot.x == self.stop_point[0] and self.robot.y == self.stop_point[1]:
-            self.robot.found(self.robot.x,self.robot.y)
-            self.robot.founded = True
-            self.robot.set_depth()
-            self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
-            self.robot.founded_depth = self.robot.active_node_depth
-            self.update_labels()
-            self.reset_way()
+            if not self.robot.founded:
+                self.robot.found(self.robot.x,self.robot.y)
+                self.robot.founded = True
+                self.robot.set_depth()
+                self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
+                self.robot.founded_depth = self.robot.active_node_depth
+                self.update_labels()
+                self.reset_way()
+                self.robot.founded = True
             return False
         ret = True
         if self.started:

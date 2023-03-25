@@ -17,6 +17,7 @@ class Robot():
         self.see_nodes(self.x,self.y)
         self.move_c = 0
         self.parent_back_c = 0
+        self.log_f = open("log.txt","a")
 
     def see_nodes(self,x,y):
         self.grid.nodes[(x,y)].is_saw = True
@@ -161,7 +162,8 @@ class Robot():
         self.grid.nodes[(x,y)].is_moved = True
         self.grid.nodes[(x,y)].is_used = True
         self.grid.nodes[(x,y)].is_saw = True
-        self.active_depth += 1
+        self.active_depth += 1  
+        self.log_f.write("{},{} \n".format(x,y))
         self.grid.nodes[(x,y)].parent = self.grid.nodes[(self.x,self.y)]
         self.grid.nodes[(self.x,self.y)].add_child(self.grid.nodes[(x,y)])
         self.set_way(self.grid.nodes[(x,y)])
@@ -198,10 +200,14 @@ class Robot():
         return small_node
 
     def found(self,x,y):
+        self.log_f = open("log.txt","a")
         self.founded_depth = self.grid.nodes[(x,y)].real_depth
         self.grid.nodes[(x,y)].is_short_way = True
+        self.log_f.write("Shortest way : \n")
+        found_x_y = []
         back_node = self.go_to_small(x,y)
         found_way = [back_node]
+        found_x_y.append((back_node.x,back_node.y))
         found_way.append(self.grid.nodes[(x,y)])
         back_node.is_short_way = True
         found_way.append(back_node)
@@ -210,8 +216,11 @@ class Robot():
                 break
             back_node = self.go_to_small(back_node.x,back_node.y)
             found_way.append(back_node)
+            found_x_y.append((back_node.x,back_node.y))
             back_node.is_short_way = True
+        self.log_f.write("{} \n".format(found_x_y))
         print("bulunan yol uzunluğu : ",len(found_way))
+        self.log_f.close()
 
     def update(self):
         if self.founded:

@@ -19,6 +19,8 @@ class MyWindow(Gtk.Window):
         self.max_x = 1900
         self.max_y = 1000
         self.set_size_request(self.max_x,self.max_y)
+        log_f = open("log.txt","w")
+        log_f.close()
 
 win = MyWindow()
 #css_provider = Gtk.CssProvider()
