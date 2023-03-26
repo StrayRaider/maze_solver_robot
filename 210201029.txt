@@ -1,0 +1,1189 @@
+import random, gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk
+from mz_lib import grid, problems, game, select_size, read_url
+
+class MyWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Mazle Solver")
+        self.stack = Gtk.Stack()
+        self.add(self.stack)
+        self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        self.stack.set_transition_duration(3000)
+        self.stack.add_titled(problems.Problems(self),"problem_select","choice_screen")
+        self.stack.add_titled(select_size.Select_size(self),"select_size","choice_screen")
+        self.stack.add_titled(read_url.Select_size(self),"read_url","choice_screen")
+        self.game = game.Game(self)
+        self.stack.add_titled(self.game,"game","choice_screen")
+        self.problem = 0
+        self.max_x = 1900
+        self.max_y = 1000
+        self.set_size_request(self.max_x,self.max_y)
+        log_f = open("log.txt","w")
+        log_f.close()
+
+win = MyWindow()
+
+win.connect("destroy", Gtk.main_quit)
+win.show_all()
+Gtk.main()
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+class Select_size(Gtk.VBox):
+    def __init__(self,parent):
+        Gtk.VBox.__init__(self)
+        self.parent = parent
+        self.vert = Gtk.VBox()
+        self.entry_box = Gtk.HBox()
+        self.pack_start(self.vert,0,0,5)
+        self.vert.pack_start(self.entry_box,0,0,5)
+        self.label = Gtk.Label("select_size")
+        self.vert.pack_start(self.label,1,1,5)
+        self.entry_x = Gtk.Entry()
+        self.entry_y = Gtk.Entry()
+        self.label = Gtk.Label("X")
+        self.entry_box.pack_start(self.entry_x,1,1,5)
+        self.entry_box.pack_start(self.label,1,1,5)
+        self.entry_box.pack_start(self.entry_y,1,1,5)
+        self.set_size = Gtk.Button(label="Next")
+        self.vert.pack_start(self.set_size,0,0,5)
+        self.set_size.connect("clicked",self.get_size)
+        self.x = 0
+        self.y = 0
+        self.hardness_combo = Gtk.ComboBoxText()
+        self.hardness_combo.append_text("easy")
+        self.hardness_combo.append_text("hard")
+        self.vert.pack_start(self.hardness_combo,0,0,5)
+        self.maze_hardness = True
+
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.vert.pack_start(self.turn_back_but,0,0,5)
+        self.turn_back_but.connect("clicked",self.turn_back)
+
+    def get_size(self,widget):
+        self.x = self.entry_x.get_text()
+        self.y = self.entry_y.get_text()
+        if self.hardness_combo.get_active_text() == "easy":
+            self.maze_hardness = False
+        else:
+            self.maze_hardness = True
+        self.parent.game.start(2,(self.x,self.y),self.maze_hardness)
+        self.parent.stack.set_visible_child_name("game")
+
+    def turn_back(self,widget):
+        self.parent.stack.set_visible_child_name("problem_select")
+
+import random
+from mz_lib import node
+
+class Robot():
+    def __init__(self,parent):
+        self.active_depth = 0
+        self.parent = parent
+        self.founded = False
+        self.x = self.parent.start_point[0]
+        self.y = self.parent.start_point[1]
+        self.grid = self.parent.grid
+        self.grid.nodes[(self.x,self.y)].is_moved = True
+        self.grid.nodes[(self.x,self.y)].is_saw = True
+        self.grid.nodes[(self.x,self.y)].is_used = True
+        self.grid.nodes[(self.x,self.y)].real_depth = 0
+        self.founded_depth = 0
+        self.see_nodes(self.x,self.y)
+        self.move_c = 0
+        self.parent_back_c = 0
+        self.log_f = open("log.txt","a")
+
+    def see_nodes(self,x,y):
+        self.grid.nodes[(x,y)].is_saw = True
+        see_list = self.around(x,y)
+        for i in see_list:
+            i.is_saw = True                
+        self.set_depth()
+
+    def set_depth(self):
+        see_list = self.parent.grid.nodes.values()
+        for i in see_list:
+            if i.type == 0 and i.is_saw:
+                nbh = self.around(i.x,i.y)
+                nums = []
+                for x in nbh:
+                    if x.real_depth != -1:
+                        nums.append(x.real_depth)
+                smallest_depth = self.smallest(nums)
+                if i.real_depth > smallest_depth +1 or i.real_depth == -1:
+                    i.real_depth = smallest_depth +1
+                    self.set_depth()
+
+    def smallest(self,num_list):
+        new_list = []
+        for i in num_list:
+            if i == -1:
+                pass
+            else:
+                new_list.append(i)
+        if len(new_list) == 0:
+            return 0
+        min_d = new_list[0]
+        new_list.sort()
+        return new_list[0]
+
+    def around(self,x,y):
+        around_l = []
+        if x+1 < len(self.grid.maze):
+            around_l.append(self.grid.nodes[(x+1,y)])
+        if x-1 >= 0:
+            around_l.append(self.grid.nodes[(x-1,y)])
+        if y+1 < len(self.grid.maze[0]):
+            around_l.append(self.grid.nodes[(x,y+1)])
+        if y-1 >= 0:
+            around_l.append(self.grid.nodes[(x,y-1)])
+        return around_l
+
+    def is_able_to_move(self,x,y):
+        if self.grid.maze[x][y] != 0:
+            return 0
+        if self.grid.nodes[(x,y)].is_moved:
+            return 0
+        if self.grid.nodes[(x,y)].barren:
+            return 0
+        return 1
+
+    def is_barren(self,x,y):
+        node = self.grid.nodes[(x,y)]
+        nbh = self.around(node.x,node.y)
+        cnt = 0
+        if not node.is_moved and node.type == 0:
+            if node.barren == True:
+                return True
+            for i in nbh:
+                if not i.is_saw:
+                    node.barren = False
+                    return False
+                if i.type ==1:
+                    cnt +=1
+                elif i.is_moved:
+                    cnt +=1
+                elif i.b_moved:
+                    cnt +=1
+            for i in nbh:
+                if i.type==0 and not i.is_moved:
+                    if not i.b_moved:
+                        node.b_moved = True
+                        ret = self.is_barren(i.x,i.y)
+                        node.b_moved = False
+                        if not ret:
+                            node.barren = False
+                            return False
+                        else:
+                            cnt+=1
+            if cnt == 4:
+                node.barren = True
+                return True
+            else:
+                node.barren = False
+                return False
+
+    def move(self):
+        self.move_c += 1
+        x = self.x
+        y = self.y
+        # kırmızı yakındaysa direkt ulaş
+        if self.parent.is_stop_near(x,y):
+            self.move_f(*self.parent.stop_point)
+        else:
+            self.is_barren(x+1,y)
+            self.is_barren(x-1,y)
+            self.is_barren(x,y+1)
+            self.is_barren(x,y-1)
+            rd = random.randint(0,3)
+            if rd == 0:
+                x+=1
+            elif rd == 1:
+                x-=1
+            elif rd == 2:
+                y+=1
+            elif rd == 3:
+                y-=1
+            if self.is_able_to_move(x,y):
+                self.move_f(x,y)
+            else:
+                x = self.x
+                y = self.y
+                if self.is_able_to_move(x+1,y):
+                    self.move_f(x+1,y)
+                elif self.is_able_to_move(x-1,y):
+                    self.move_f(x-1,y)
+                elif self.is_able_to_move(x,y+1):
+                    self.move_f(x,y+1)
+                elif self.is_able_to_move(x,y-1):
+                    self.move_f(x,y-1)
+                else:
+                    #parenta dönme kodu
+                    self.parent_back_c += 1
+                    #üzerinde olunan node un girişini kaldır
+                    self.grid.nodes[(self.x,self.y)].in_way = None
+                    self.active_depth -= 1
+                    self.grid.nodes[(self.x,self.y)].is_used = False
+                    x = self.grid.nodes[(self.x,self.y)].parent.x
+                    y = self.grid.nodes[(self.x,self.y)].parent.y
+                    self.x = x
+                    self.y = y
+                    #parent(geri dönülen) node un çıkışını kaldır
+                    self.grid.nodes[(self.x,self.y)].out_way = None
+                    self.grid.nodes[(self.x,self.y)].childs = []
+
+    def move_f(self,x,y):
+        self.grid.nodes[(x,y)].is_moved = True
+        self.grid.nodes[(x,y)].is_used = True
+        self.grid.nodes[(x,y)].is_saw = True
+        self.active_depth += 1  
+        self.log_f.write("{},{} \n".format(x,y))
+        self.grid.nodes[(x,y)].parent = self.grid.nodes[(self.x,self.y)]
+        self.grid.nodes[(self.x,self.y)].add_child(self.grid.nodes[(x,y)])
+        self.set_way(self.grid.nodes[(x,y)])
+        self.x = x
+        self.y = y
+        self.see_nodes(self.x,self.y)
+
+    #gidilen node u alır ve parent ve kendisine yol çeker
+    def set_way(self,m_node):
+        x = m_node.x - m_node.parent.x
+        y = m_node.y - m_node.parent.y
+        way = None
+        if x == 1:
+            way = "up"
+        elif x == -1:
+            way = "down"
+        elif y == 1:
+            way = "right"
+        elif y == -1:
+            way = "left"
+        m_node.in_way = way
+        m_node.parent.out_way = way
+
+    def go_to_small(self,x,y):
+        around = self.around(x,y)
+        nums = []
+        for i in around:
+            nums.append(i.real_depth)
+        smallest_depth = self.smallest(nums)
+        small_node = None
+        for i in around:
+            if i.real_depth == smallest_depth:
+                small_node = i
+        return small_node
+
+    def found(self,x,y):
+        self.log_f = open("log.txt","a")
+        self.founded_depth = self.grid.nodes[(x,y)].real_depth
+        self.grid.nodes[(x,y)].is_short_way = True
+        self.log_f.write("Shortest way : \n")
+        found_x_y = []
+        back_node = self.go_to_small(x,y)
+        found_way = [back_node]
+        found_x_y.append((back_node.x,back_node.y))
+        found_way.append(self.grid.nodes[(x,y)])
+        back_node.is_short_way = True
+        found_way.append(back_node)
+        while 1:
+            if not back_node.real_depth:
+                break
+            back_node = self.go_to_small(back_node.x,back_node.y)
+            found_way.append(back_node)
+            found_x_y.append((back_node.x,back_node.y))
+            back_node.is_short_way = True
+        self.log_f.write("{} \n".format(found_x_y))
+        print("bulunan yol uzunluğu : ",len(found_way))
+        self.log_f.close()
+
+    def update(self):
+        if self.founded:
+            return False
+        else:
+            self.move()
+        self.active_node_depth= self.grid.nodes[(self.x,self.y)].real_depth
+        self.founded_depth = self.active_node_depth
+        return True
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+class Select_size(Gtk.VBox):
+    def __init__(self,parent):
+        Gtk.VBox.__init__(self)
+        self.parent = parent
+        self.vert = Gtk.VBox()
+        self.entry_box = Gtk.HBox()
+        self.pack_start(self.vert,0,0,5)
+        self.vert.pack_start(self.entry_box,0,0,5)
+        self.label = Gtk.Label("read url")
+        self.vert.pack_start(self.label,1,1,5)
+        self.url_entry = Gtk.Entry()
+        self.entry_box.pack_start(self.url_entry,1,1,5)
+        self.set_size = Gtk.Button(label="Read")
+        self.vert.pack_start(self.set_size,0,0,5)
+        self.set_size.connect("clicked",self.start)
+        self.url_but_1 = Gtk.Button(label="URL 1")
+        self.url_but_2 = Gtk.Button(label="URL 2")
+        self.url_but_1.connect("clicked",self.url_but_1_c)
+        self.url_but_2.connect("clicked",self.url_but_2_c)
+        self.url_box = Gtk.HBox()
+        self.vert.pack_start(self.url_box,1,1,5)
+        self.url_box.pack_start(self.url_but_1,1,1,5)
+        self.url_box.pack_start(self.url_but_2,1,1,5)
+
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.vert.pack_start(self.turn_back_but,0,0,5)
+        self.turn_back_but.connect("clicked",self.turn_back)
+
+    def url_but_1_c(self,widget):
+        self.start(None,"http://bilgisayar.kocaeli.edu.tr/prolab2/url1.txt")
+
+    def url_but_2_c(self,widget):
+        self.start(None,"http://bilgisayar.kocaeli.edu.tr/prolab2/url2.txt")
+
+    def start(self,widget,url=None):
+        if url == None:
+            url = self.url_entry.get_text()
+        self.parent.stack.set_visible_child_name("game")
+        self.parent.game.start(1,url)
+        #self.parent.game.start(1,"./mz_lib/maps/url1.txt")
+
+    def turn_back(self,widget):
+        self.parent.stack.set_visible_child_name("problem_select")
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+class Problems(Gtk.VBox):
+    def __init__(self,parent):
+        Gtk.VBox.__init__(self)
+        self.parent = parent
+        self.label = Gtk.Label("choice")
+        self.pack_start(self.label,0,0,5)
+        
+        self.problem1 = Gtk.Button()
+        self.problem1.set_label("Problem 1")
+        self.problem1.connect("clicked",self.problem_1_clicked)
+        
+        self.problem2 = Gtk.Button()
+        self.problem2.set_label("Problem 2")
+        self.problem2.connect("clicked",self.problem_2_clicked)
+        self.pack_start(self.problem1,0,0,5)
+        self.pack_start(self.problem2,0,0,5)
+        
+    def problem_1_clicked(self,widget):
+        self.parent.stack.set_visible_child_name("read_url")
+    
+    def problem_2_clicked(self,widget):
+        self.parent.stack.set_visible_child_name("select_size")
+class Node():
+    def __init__(self,x,y,depth=-1,parent=None):
+        self.x = x
+        self.y = y
+        self.type = -1
+        self.parent = parent
+        self.childs = []
+        self.depth = depth
+        self.is_saw = False
+        self.is_used = False
+        self.is_moved = False
+        self.real_depth = -1
+        self.is_short_way = False
+        self.in_way = None
+        self.out_way = None
+        self.map_childs = []
+        self.map_parents = []
+        self.map_setted = False
+        self.barren = False
+        self.b_moved = False
+        self.g_real_depth = -1
+        self.g_saw = False
+        self.is_game_short_way = False
+
+    def add_child(self,child):
+        self.childs.append(child)
+import os, random, requests
+from mz_lib import node
+
+import sys
+sys.setrecursionlimit(1000000)
+
+class Grid():
+    def __init__(self,problem,path_size,start_p=None,stop_p=None,maze_hardness=None):
+        #path_size is a variable able to carry path or size
+        # it is a var for random size when chooseing the wall or road on random maze gen if it is bigger there will be more walls
+        if maze_hardness:
+            self.rand_size = 2
+        else:
+            self.rand_size = 1
+        self.nodes = {}
+        if problem == 1:
+            print("path yok",path_size)
+            self.maze = self.read_from_url(path_size)
+            self.gen_nodes()
+        elif problem == 2:
+            self.random_maze_gen(int(path_size[0]),int(path_size[1]),start_p,stop_p)
+    #reads path and returns a maze that is able to use
+
+    def gen_nodes(self):
+        x = 0
+        for row in self.maze:
+            y = 0
+            for col in row:
+                self.nodes[(x,y)]=node.Node(x,y)
+                self.nodes[(x,y)].type = self.maze[x][y]
+                y+=1
+            x+=1
+
+    def change_barrier(self):
+        self.set_threes(self.maze)
+        self.set_two(self.maze)
+        self.gen_nodes()
+
+    def read_from_url(self,url):
+        maze = []
+        response = requests.get(url)
+        data = response.text
+        data = data.split("\n")
+        top_bottom = []
+        for line in data:
+            top_bottom.append(1)
+        top_bottom.append(1)
+        top_bottom.append(1)
+        maze.append(top_bottom)
+        for line in data:
+            if line != '':
+                x=[]
+                x.append(1)
+                for element in line:
+                    x.append(int(element))
+                x.append(1)
+                maze.append(x)
+        maze.append(top_bottom)
+        return maze
+
+    def set_threes(self,maze):
+        y = 0
+        for i in maze:
+            x = 0
+            for j in i:
+                if maze[x][y] == 3:
+                    random_num = random.randint(0,4)
+                    if random_num == 0:
+                        self.make_T(maze,x,y)
+                    elif random_num == 1:
+                        self.make_L(maze,x,y)
+                    else:
+                        self.make_I(maze,x,y)
+                x +=1
+            y+=1
+
+    def set_two(self,maze):
+        y = 0
+        for i in maze:
+            x = 0
+            for j in i:
+                if maze[x][y] == 2:
+                    random_num = random.randint(0,4)
+                    if random_num == 0:
+                        self.make_Sl(maze,x,y)
+                    elif random_num == 1:
+                        self.make_V(maze,x,y)
+                    else:
+                        self.make_H(maze,x,y)
+                x +=1
+            y+=1
+
+    def make_Sl(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+
+    def make_V(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 0
+
+    def make_H(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 0
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+
+    def make_L(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 1
+        maze[x+1][y+1] = 0
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 1
+        maze[x+2][y+1] = 0
+        maze[x+2][y+2] = 0
+
+    def make_T(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 1
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 0
+        maze[x+2][y+1] = 1
+        maze[x+2][y+2] = 0
+
+    def make_I(self,maze,x,y):
+        maze[x][y] = 1
+        maze[x][y+1] = 1
+        maze[x][y+2] = 1
+        maze[x+1][y] = 0
+        maze[x+1][y+1] = 1
+        maze[x+1][y+2] = 0
+        maze[x+2][y] = 1
+        maze[x+2][y+1] = 1
+        maze[x+2][y+2] = 1
+
+    def read_generate(self,path):
+        maze = []
+        f = open(path,'r')
+        readed = f.read()  
+        readed = readed.split("\n")
+        top_bottom = []
+        for line in readed:
+            top_bottom.append(1)
+        top_bottom.append(1)
+        top_bottom.append(1)
+        maze.append(top_bottom)
+        for line in readed:
+            if line != '':
+                x=[]
+                x.append(1)
+                for element in line:
+                    x.append(int(element))
+                x.append(1)
+                maze.append(x)
+        maze.append(top_bottom)
+        f.close()
+        return maze
+
+    def gen_start_stop_on_corner(self,size_x,size_y):
+        start = (0,0)
+        stop = (size_x,size_y)
+
+    def free_nbh(self,nbh_list):
+        free_nbh_list = []
+        for i in nbh_list:
+            if i.type == 0 and not i.map_setted:
+                free_nbh_list.append(i)
+        return free_nbh_list
+
+    def move_node(self,pos_x,pos_y):
+        active_node = self.nodes[(pos_x,pos_y)]
+        nbh_list = [self.nodes[(pos_x,pos_y+1)],self.nodes[(pos_x,pos_y-1)],
+                    self.nodes[(pos_x+1,pos_y)],self.nodes[(pos_x-1,pos_y)]]
+        free_nbh_list = self.free_nbh(nbh_list)
+        if len(free_nbh_list)!=0:
+            is_changed = False
+            for i in free_nbh_list:
+                random_num = random.randint(0,self.rand_size)
+                if not i.map_setted:
+                    if not random_num:
+                        active_node.map_childs.append(i)
+                        i.map_parents.append(active_node)
+                        i.map_setted = True
+                        is_changed = True
+                        print(i.x,i.y,"ye gidiliyor")
+                        self.move_node(i.x,i.y)
+                    else:
+                        i.type = 1
+                        i.map_setted = True
+                        print("1 atandı")
+            if not is_changed:
+                i = free_nbh_list[0]
+                active_node.map_childs.append(i)
+                i.map_parents.append(active_node)
+                i.map_setted = True
+                i.type = 0
+                print("mecburi_yol")
+                self.move_node(i.x,i.y)
+
+    def zero_maze(self,size_x,size_y):
+        maze = []
+        for x in range(0,size_x):
+            line = []
+            for y in range(0,size_y):
+                if x == 0 or x == size_x-1 or y == 0 or y == size_y-1:
+                    line.append(1)                 
+                else:
+                    line.append(0)
+            maze.append(line)
+        return maze
+
+    def random_maze_gen(self,size_x,size_y,start_p,stop_p):
+        self.maze = self.zero_maze(size_x,size_y)
+        self.gen_nodes()
+        self.move_node(*start_p)
+        self.not_used_setter()
+        self.gen_maze()
+
+    def is_not_middle(self,i):
+        if self.nodes[i].x != 0 and self.nodes[i].x != len(self.maze)-1 and self.nodes[i].y != 0 and self.nodes[i].y != len(self.maze[0])-1:
+            return True
+        return False
+
+    def not_used_setter(self):
+        while self.is_none_gone():
+            for i in self.nodes.keys():
+                if(self.is_not_middle(i)):
+                    if not self.nodes[i].map_setted:
+                        nbh_list = [self.nodes[(i[0],i[1]+1)],self.nodes[(i[0],i[1]-1)],
+                            self.nodes[(i[0]+1,i[1])],self.nodes[(i[0]-1,i[1])]]
+                        for node in nbh_list:
+                            if node.type == 1 and (self.is_not_middle((node.x,node.y))):
+                                node.type = 0
+                                self.move_node(node.x,node.y)
+                                break
+
+    def is_none_gone(self):
+        none_gone = False
+        for i in self.nodes.keys():
+            if(self.is_not_middle(i)):
+                if not self.nodes[i].map_setted:
+                    none_gone = True
+        return none_gone
+
+    def gen_maze(self):
+        for i in self.nodes.keys():
+            self.maze[self.nodes[i].x][self.nodes[i].y] = self.nodes[i].type
+import gi, random, datetime
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
+from mz_lib import grid, robot
+
+class Game(Gtk.HBox):
+    def __init__(self,parent):
+        Gtk.VBox.__init__(self)
+        self.parent = parent
+        self.label = Gtk.Label("Game")
+        #self.pack_start(self.label,0,0,5)
+        self.drawing_area = Gtk.DrawingArea()
+        self.drawing_area.connect("draw", self.draw_all)
+        self.drawing_area.set_size_request(1000,1000)
+        self.pack_start(self.drawing_area,1,1,10)
+        self.drawing_area.queue_draw()
+        self.robot = None
+        self.started = False
+        self.fastness = 1000
+
+        #self.start_but = Gtk.Button()
+        #self.start_but.set_label("Start")
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but = Gtk.Button(image=image)
+        self.start_but.connect("clicked",self.start_but_clicked)
+
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT)
+        self.faster = Gtk.Button(image=image)
+        self.faster.connect("clicked",self.set_faster)
+        self.speed_changed = False
+
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS)
+        self.slower = Gtk.Button(image=image)
+        self.slower.connect("clicked",self.set_slower)
+        self.speed_changed = False
+
+        self.finish = Gtk.Button()
+        self.finish.set_label("Finish")
+        self.finish.connect("clicked",self.finish_maze)
+
+        self.but_part = Gtk.VBox()
+        self.fastness_part = Gtk.HBox()
+        self.but_part.pack_start(self.fastness_part,0,0,5)
+        self.fastness_part.pack_start(self.slower,0,0,5)
+        self.fastness_part.pack_start(self.start_but,0,0,5)
+        self.fastness_part.pack_start(self.faster,0,0,5)
+        self.but_part.pack_start(self.finish,0,0,5)
+        self.pack_start(self.but_part,0,0,5)
+        self.max_x_px =950
+        self.max_y_px =1700
+
+        self.move_c_label = Gtk.Label("move : 0")
+        self.but_part.pack_start(self.move_c_label,0,0,5)
+
+        self.parent_c_label = Gtk.Label("turning back : 0")
+        self.but_part.pack_start(self.parent_c_label,0,0,5)
+
+        self.active_depth_label = Gtk.Label("active depth : 0")
+        self.but_part.pack_start(self.active_depth_label,0,0,5)
+
+        self.view_depth_but = Gtk.Button(label="Show Depths")
+        self.view_depth_but.connect("clicked",self.set_depth_label)
+        self.but_part.pack_start(self.view_depth_but,0,0,5)
+        self.view_depth_label = False
+        self.short_way_but = Gtk.Button(label="Show Short Way")
+        self.short_way_but.connect("clicked",self.short_way_label)
+        self.but_part.pack_start(self.short_way_but,0,0,5)
+        self.short_way = False
+
+        self.view_game_depth_but = Gtk.Button(label="Show Game Depths")
+        self.view_game_depth_but.connect("clicked",self.set_game_depth_label)
+        self.but_part.pack_start(self.view_game_depth_but,0,0,5)
+        self.view_game_depth_label = False
+
+        self.start_time = datetime.datetime.now()
+        self.stop_time = datetime.datetime.now()
+        self.time_label = Gtk.Label("Ms : "+str((self.stop_time-self.start_time).seconds))
+        self.but_part.pack_start(self.time_label,0,0,5)
+
+        self.turn_back_but = Gtk.Button(label="Turn Back")
+        self.but_part.pack_start(self.turn_back_but,0,0,5)
+
+        self.maze_start_x = 0
+        self.maze_start_y = 0
+        self.is_not_fast = True
+
+    def visible(self):
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but.set_image(image)
+        self.active_depth_label.set_text("active depth : 0")
+        self.parent_c_label.set_text("turning back : 0")
+        self.move_c_label.set_text("move : 0")
+        self.time_label.set_text("Ms : "+"0")
+        self.fastness = 1000
+
+    def short_way_label(self,widget):
+        if self.short_way == True:
+            self.short_way = False
+            self.short_way_but.set_label("Show Short Way")
+            self.reset_depth()
+        else:
+            self.short_way_but.set_label("Hide Short Way")
+            self.short_way = True
+            self.set_depth()
+            #self.found(*self.stop_point)
+
+    def visible(self):
+        image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        self.start_but.set_image(image)
+        self.active_depth_label.set_text("active depth : 0")
+        self.parent_c_label.set_text("turning back : 0")
+        self.move_c_label.set_text("move : 0")
+        self.time_label.set_text("Ms : "+"0")
+        self.fastness = 1000
+
+    def set_depth_label(self,widget):
+        if self.view_depth_label == True:
+            self.view_depth_label = False
+            self.view_depth_but.set_label("Show Depths")
+        else:
+            self.view_depth_but.set_label("Hide Depths")
+            self.view_depth_label = True
+
+    def set_game_depth_label(self,widget):
+        if self.view_game_depth_label == True:
+            self.view_game_depth_label = False
+            self.view_game_depth_but.set_label("Show Game Depths")
+        else:
+            self.view_game_depth_but.set_label("Hide Game Depths")
+            self.view_game_depth_label = True
+
+    def init_and_scale(self):
+        count_x = len(self.grid.maze)
+        count_y = len(self.grid.maze[0])
+        self.box_x = 50
+        self.space_x = 2
+        self.box_y = 50
+        self.space_y = 2
+        scale = 1
+        scale_x = 1
+        scale_y = 1
+        if count_x * (self.box_x + self.space_x) > self.max_x_px:
+            scale_x = self.max_x_px/(count_x * (self.box_x + self.space_x))
+        if count_y * (self.box_y + self.space_y) > self.max_y_px:
+            scale_y = self.max_y_px/(count_y * (self.box_y + self.space_y))
+        if scale_x < scale_y:
+            scale = scale_x
+        elif scale_y < scale_x:
+            scale = scale_y
+        else:
+            scale = scale_y
+        self.scale = scale
+        self.box_x = 50*scale
+        self.box_y = 50*scale
+        self.con_x = 6*scale
+        self.con_y = 25*scale
+        if self.con_x < 1:
+            self.con_x = 1
+        if self.con_y < 1:
+            self.con_y = 1
+        self.space_x = 2*scale
+        self.space_y = 2*scale
+
+        self.duvar = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/duvar.png", self.box_x, self.box_y, True)
+        self.zemin_w = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin.png", self.box_x, self.box_y, True)
+        self.zemin_g = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin_1.png", self.box_x, self.box_y, True)
+        self.zemin_b = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin_2.png", self.box_x, self.box_y, True)
+        self.zemin_y = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/zemin_3.png", self.box_x, self.box_y, True)
+        self.connect = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/connect.png", self.con_x, self.con_y, True)
+        self.connect_r = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/connect_r.png", self.con_y, self.con_x, True)
+        self.connect_r_2 = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/connect_r_2.png", self.con_y, self.con_x, True)
+        self.robot_p = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/robot.png", self.box_x, self.box_y, True)
+        self.bulut_w = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bulut_1.png", self.box_x, self.box_y, True)
+        self.bulut_d = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bulut_2.png", self.box_x, self.box_y, True)
+        self.bulut_n = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bulut_3.png", self.box_x, self.box_y, True)
+        self.cizgi_d = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_d.png", self.con_x, self.con_y, True)
+        self.cizgi_y = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/cizgi_y.png", self.con_y, self.con_x, True)
+        self.start_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/bb.png", self.box_x, self.box_y, True)
+        self.fv_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/fv.png", self.box_x, self.box_y, True)
+        self.final_img = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/final_v.png", self.box_x, self.box_y, True)
+        self.orange_z = GdkPixbuf.Pixbuf.new_from_file_at_scale("./assets/orange_z.png", self.box_x, self.box_y, True)
+
+
+        maze_size_x = count_x * (self.box_x + self.space_x)
+        maze_size_y = count_y * (self.box_y + self.space_y)
+        self.maze_start_x = 0
+        self.maze_start_y = 0
+        if maze_size_x < self.max_x_px:
+            self.maze_start_x = (self.max_x_px - maze_size_x)/2
+        if maze_size_y < self.max_y_px:
+            self.maze_start_y = (self.max_y_px - maze_size_y)/2
+
+    def set_faster(self,widget,speed_up = 2):
+        self.timer = None
+        self.fastness /= speed_up
+        self.speed_changed = True
+        self.timer = GObject.timeout_add(self.fastness, self.update)
+
+    def set_slower(self,widget,speed_up = 2):
+        self.timer = None
+        self.fastness *= speed_up
+        self.speed_changed = True
+        self.timer = GObject.timeout_add(self.fastness, self.update)
+
+    def finish_maze(self,widget):
+        self.start_but_clicked(None)
+        self.set_faster(None,10000)
+        self.start_but_clicked(None)
+        self.is_not_fast = False
+
+    def start_but_clicked(self,widget):
+        self.timer = GObject.timeout_add(self.fastness, self.update)
+        if self.started == True:
+            self.started = False
+            image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY)
+        elif self.started == False:
+            image = Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE)
+            self.started = True
+        self.start_but.set_image(image)
+        self.start_time = datetime.datetime.now()
+        
+    def start(self,problem,size_path = None,maze_hardness = None):
+        self.problem = problem
+        if problem == 1:
+            self.solve_problem_1(size_path)
+        if problem == 2:
+            self.solve_problem_2(size_path,maze_hardness)
+    
+    def solve_problem_1(self,path):
+        self.grid = grid.Grid(1,path)
+        self.start_point ,self.stop_point = self.problem_1_start_stop()
+        #firstly start stop points generates than 3x3 and 2x2 barrier shape changings mades
+        self.grid.change_barrier()
+        self.robot = robot.Robot(self)
+        self.set_depth()
+        self.init_and_scale()
+        self.turn_back_but.connect("clicked",self.turn_back_2)
+        
+    def solve_problem_2(self,size,maze_hardness):
+        self.start_point ,self.stop_point = self.problem_2_start_stop(int(size[0]),int(size[1]))
+        self.grid = grid.Grid(2,size,self.start_point,self.stop_point,maze_hardness)
+        self.robot = robot.Robot(self)
+        self.set_depth()
+        self.init_and_scale()
+        self.turn_back_but.connect("clicked",self.turn_back_1)
+
+    def turn_back_1(self,widget):
+        self.visible()
+        self.parent.stack.set_visible_child_name("select_size")
+
+    def turn_back_2(self,widget):
+        self.visible()
+        self.parent.stack.set_visible_child_name("read_url")
+ 
+    def problem_2_start_stop(self,size_x,size_y):
+        random_num = random.randint(0,4)
+        start_point = -1
+        stop_point = -1
+        if random_num == 0:
+            start_point = (1,1)
+            stop_point = (size_x-2,size_y-2)
+        elif random_num == 1:
+            #sağ üst in
+            start_point = (size_x-2,1)
+            stop_point = (1,size_y-2)
+        elif random_num == 2:
+            #sol alt in
+            start_point = (1,size_y-2)
+            stop_point = (size_x-2,1)
+        elif random_num == 3:
+            #sağ alt in
+            start_point = (size_x-2,size_y-2)
+            stop_point = (1,1)
+        else:
+            start_point = (1,1)
+            stop_point = (size_x-2,size_y-2)
+        return (start_point, stop_point)
+
+    def problem_1_start_stop(self):
+        start_point = self.get_point()
+        stop_point = self.get_point()
+        #if start and stop is same change the stop point
+        dist_x = abs(start_point[0]-stop_point[0])
+        dist_y = abs(start_point[1]-stop_point[1])
+        print("dist : ",dist_x+dist_y)
+        print(start_point[0]-stop_point[0])
+        print(start_point[1]-stop_point[1])
+        while stop_point == start_point or dist_x+dist_y<4:
+            dist_x = abs(start_point[0]-stop_point[0])
+            dist_y = abs(start_point[1]-stop_point[1])
+            stop_point = self.get_point()
+        return start_point, stop_point
+    
+    def get_point(self):
+        #random start and stop point generator
+        x = random.randint(0,len(self.grid.maze)-1)
+        y = random.randint(0,len(self.grid.maze[0])-1)
+        if self.grid.maze[x][y] != 0:
+            return self.get_point()
+        else:
+            return (x,y)
+
+    def draw_all(self,widget,cr):
+        cr.set_source_rgb(0,1,0)
+        y = 0
+        for i in self.grid.nodes.keys():
+            m_node = self.grid.nodes[i]
+            x = m_node.x
+            y = m_node.y
+            # kare çizimi
+            #if not m_node.is_saw:
+            #    Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, (self.box_y+self.space_y)*y,(self.box_x+self.space_x)*x)
+            if x == self.stop_point[0] and y == self.stop_point[1]:
+                Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif m_node.barren:
+                Gdk.cairo_set_source_pixbuf(cr, self.orange_z, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif x == self.start_point[0] and y == self.start_point[1]:
+                Gdk.cairo_set_source_pixbuf(cr, self.start_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif m_node.is_used:
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_b, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif m_node.is_moved:
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_y, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            elif self.grid.maze[x][y] == 0:
+                Gdk.cairo_set_source_pixbuf(cr, self.zemin_w, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            else:
+                Gdk.cairo_set_source_pixbuf(cr, self.duvar, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+            cr.rectangle(self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x,self.box_x,self.box_y)
+            cr.fill()
+            if m_node.is_short_way:
+                Gdk.cairo_set_source_pixbuf(cr, self.final_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
+            if m_node.is_game_short_way:
+                Gdk.cairo_set_source_pixbuf(cr, self.fv_img, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
+            if not m_node.is_saw:
+                Gdk.cairo_set_source_pixbuf(cr, self.bulut_n, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
+            if self.robot.x == x and self.robot.y == y:
+                Gdk.cairo_set_source_pixbuf(cr, self.robot_p, self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+(self.box_x+self.space_x)*x)
+                cr.paint()
+            #yol çizimi:
+            if m_node.in_way != None:
+                if m_node.in_way == "down":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/2,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
+                elif m_node.in_way == "up":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),self.maze_start_x+(self.box_x+self.space_x)*x)
+                elif m_node.in_way == "left":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                elif m_node.in_way == "right":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                cr.paint()
+            if m_node.out_way != None:
+                if m_node.out_way == "up":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/2,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
+                elif m_node.out_way == "down":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_d,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_y),self.maze_start_x+(self.box_x+self.space_x)*x)
+                elif m_node.out_way == "right":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        self.maze_start_y+((self.box_y+self.space_y)*y)+(self.box_y-self.con_x)/2,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                elif m_node.out_way == "left":
+                    Gdk.cairo_set_source_pixbuf(cr, self.cizgi_y,
+                        self.maze_start_y+(self.box_y+self.space_y)*y,self.maze_start_x+((self.box_x+self.space_x)*x)+(self.box_x-self.con_x)/2)
+                cr.paint()
+            if self.view_game_depth_label:
+                self.view_g_depth(cr,m_node)
+            if m_node.real_depth != -1 and self.view_depth_label:
+                self.view_depth(cr,m_node)
+        self.drawing_area.queue_draw()
+
+    def view_depth(self,cr,m_node):
+            x = m_node.x
+            y = m_node.y
+            cr.set_source_rgb(0.3,0,0)
+            cr.move_to(self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/4,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.set_font_size(18*self.scale)
+            cr.show_text(str(m_node.real_depth))
+
+    def view_g_depth(self,cr,m_node):
+            x = m_node.x
+            y = m_node.y
+            cr.set_source_rgb(0.3,0,0)
+            cr.move_to(self.maze_start_y+((self.box_y+self.space_y)*y)+self.box_y/4,self.maze_start_x+((self.box_x+self.space_x)*x)+self.box_x/2)
+            cr.set_font_size(18*self.scale)
+            cr.show_text(str(m_node.g_real_depth))
+
+    def update_labels(self):
+        self.move_c_label.set_label("move : "+str(self.robot.move_c))
+        self.parent_c_label.set_label("turning back : "+str(self.robot.parent_back_c))
+        self.active_depth_label.set_label("active depth : "+str(self.robot.active_node_depth))
+
+    def is_stop_near(self,x,y):
+        if self.stop_point[0] == x-1 and self.stop_point[1] == y:
+            return True
+        elif self.stop_point[0] == x+1 and self.stop_point[1] == y:
+            return True
+        if self.stop_point[0] == x and self.stop_point[1] == y-1:
+            return True
+        elif self.stop_point[0] == x and self.stop_point[1] == y+1:
+            return True
+        return False
+
+    def smallest(self,num_list):
+        new_list = []
+        for i in num_list:
+            if i == -1:
+                pass
+            else:
+                new_list.append(i)
+        if len(new_list) == 0:
+            return 0
+        min_d = new_list[0]
+        new_list.sort()
+        return new_list[0]
+
+    def set_depth(self):
+        see_list = self.grid.nodes.values()
+        self.grid.nodes[(self.robot.x,self.robot.y)].g_saw = True
+        self.grid.nodes[(self.robot.x,self.robot.y)].g_real_depth = 0
+        for i in see_list:
+            if i.type == 0 and i.g_saw:
+                nbh = self.around(i.x,i.y)
+                nums = []
+                for x in nbh:
+                    if x.g_real_depth != -1:
+                        nums.append(x.g_real_depth)
+                    x.g_saw = True
+                smallest_depth = self.smallest(nums)
+                if i.g_real_depth > smallest_depth +1 or i.g_real_depth == -1:
+                    i.g_real_depth = smallest_depth +1
+                    self.set_depth()
+                        
+    def around(self,x,y):
+        around_l = []
+        if x+1 < len(self.grid.maze):
+            around_l.append(self.grid.nodes[(x+1,y)])
+        if x-1 >= 0:
+            around_l.append(self.grid.nodes[(x-1,y)])
+        if y+1 < len(self.grid.maze[0]):
+            around_l.append(self.grid.nodes[(x,y+1)])
+        if y-1 >= 0:
+            around_l.append(self.grid.nodes[(x,y-1)])
+        return around_l
+
+    def reset_depth(self):
+        see_list = self.grid.nodes.values()
+        for i in see_list:
+            i.g_real_depth = -1
+            i.g_saw = False
+            i.is_game_short_way = False
+
+    def reset_way(self):
+        see_list = self.grid.nodes.values()
+        for i in see_list:
+            i.is_game_short_way = False
+
+    def go_to_small(self,x,y):
+        around = self.around(x,y)
+        nums = []
+        for i in around:
+            nums.append(i.g_real_depth)
+        smallest_depth = self.smallest(nums)
+        small_node = None
+        for i in around:
+            if i.g_real_depth == smallest_depth:
+                small_node = i
+        return small_node
+
+    def found(self,x,y):
+        try:
+            self.grid.nodes[(x,y)].is_game_short_way = True
+            back_node = self.go_to_small(x,y)
+            found_way = [back_node]
+            found_way.append(self.grid.nodes[(x,y)])
+            back_node.is_game_short_way = True
+            found_way.append(back_node)
+            while 1:
+                if not back_node.g_real_depth:
+                    break
+                back_node = self.go_to_small(back_node.x,back_node.y)
+                found_way.append(back_node)
+                back_node.is_game_short_way = True
+            print("bulunan oyun yol uzunluğu : ",len(found_way))
+        except:
+            pass
+
+    def update(self):
+        if self.speed_changed == True:
+            self.speed_changed = False
+            return False
+        if self.robot.x == self.stop_point[0] and self.robot.y == self.stop_point[1]:
+            if not self.robot.founded:
+                self.robot.found(self.robot.x,self.robot.y)
+                self.robot.founded = True
+                self.robot.set_depth()
+                self.robot.active_node_depth= self.robot.grid.nodes[(self.robot.x,self.robot.y)].real_depth
+                self.robot.founded_depth = self.robot.active_node_depth
+                self.update_labels()
+                self.reset_way()
+                self.robot.founded = True
+            return False
+        ret = True
+        if self.started:
+            if self.robot != None:
+                ret = self.robot.update()
+        else:
+            return False
+        self.update_labels()
+        if self.short_way and self.is_not_fast and self.problem == 1:
+            self.reset_depth()
+            self.set_depth()
+            self.found(*self.stop_point)
+        self.stop_time = datetime.datetime.now()
+        #milliseconds
+        self.time_label.set_text("Ms : "+str((self.stop_time-self.start_time).total_seconds() * 1000))
+        return ret
