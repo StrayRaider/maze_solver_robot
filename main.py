@@ -23,18 +23,6 @@ class MyWindow(Gtk.Window):
         log_f.close()
 
 win = MyWindow()
-#css_provider = Gtk.CssProvider()
-#css = """window{
-#background-image: url("maze_wp_3.jpg");
-#background-repeat: no-repeat;
-#background-size: cover;
-#background-position: center center;
-#}"""
-#css_provider.load_from_data(css.encode('UTF-8'))
-#screen = Gdk.Screen.get_default()
-#style_context = win.get_style_context()
-#style_context.add_provider_for_screen(screen, css_provider,
-#            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 win.connect("destroy", Gtk.main_quit)
 win.show_all()

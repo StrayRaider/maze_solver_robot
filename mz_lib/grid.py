@@ -14,13 +14,8 @@ class Grid():
             self.rand_size = 1
         self.nodes = {}
         if problem == 1:
-            if os.path.exists(path_size):
-                print("path var",path_size)
-                self.maze = self.read_generate(path_size)
-                self.maze = self.read_generate("./mz_lib/maps/url1.txt")
-            else:
-                print("path yok",path_size)
-                self.maze = self.read_from_url(path_size)
+            print("path yok",path_size)
+            self.maze = self.read_from_url(path_size)
             self.gen_nodes()
         elif problem == 2:
             self.random_maze_gen(int(path_size[0]),int(path_size[1]),start_p,stop_p)
